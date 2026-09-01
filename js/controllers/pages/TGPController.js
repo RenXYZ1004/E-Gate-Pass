@@ -1,4 +1,4 @@
-import { resolvePhotoUrl, hasPhoto, escapeHTML, generatePaginationHTML, bindPaginationEvents, generateQRToken } from '../../utils.js';
+import { resolvePhotoUrl, hasPhoto, escapeHTML, generatePaginationHTML, bindPaginationEvents, generateQRToken, waitForImages } from '../../utils.js';
 import Dialog from '../../services/Dialog.js';
 import { setButtonLoading } from '../../views/AppView.js';
 
@@ -205,12 +205,16 @@ export default class TGPController {
     // Download TGP Card
     const btnDownload = document.getElementById('btn-download-tgp');
     if (btnDownload) {
-      btnDownload.addEventListener('click', () => {
+      btnDownload.addEventListener('click', async () => {
         const captureArea = document.getElementById('tgp-card-capture');
         if (!captureArea) return;
         btnDownload.innerHTML = 'Generating...';
         btnDownload.disabled = true;
-        html2canvas(captureArea, { scale: 3 }).then(canvas => {
+        // Same pair as the permanent pass download: let the images decode,
+        // and request them with CORS so a photo served from another origin
+        // can actually be drawn into the canvas.
+        await waitForImages(captureArea);
+        html2canvas(captureArea, { scale: 3, useCORS: true }).then(canvas => {
           const a = document.createElement('a');
           a.href = canvas.toDataURL("image/png");
           a.download = `TGP_Card_${Date.now()}.png`;

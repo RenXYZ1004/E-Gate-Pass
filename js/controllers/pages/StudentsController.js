@@ -673,7 +673,7 @@ export default class StudentsController {
     });
     const btnDownload = document.getElementById('btn-download-id');
     if (btnDownload) {
-      btnDownload.addEventListener('click', () => {
+      btnDownload.addEventListener('click', async () => {
         const captureArea = document.getElementById('idcard-capture');
         if (!captureArea) return;
         btnDownload.innerHTML = 'Generating...';
@@ -681,7 +681,15 @@ export default class StudentsController {
         // Strip box-shadow before capture to avoid ugly outline in exported image
         const origShadow = captureArea.style.boxShadow;
         captureArea.style.boxShadow = 'none';
-        html2canvas(captureArea, { scale: 3, backgroundColor: null }).then(canvas => {
+        // The photo lives on Vercel Blob, a different origin. Without useCORS
+        // html2canvas requests it without CORS and cannot draw it, so the card
+        // downloaded with an empty photo box for exactly those students who
+        // had uploaded one. Back when photos were stored as data: URIs this
+        // did not show, because a data URI is not cross-origin.
+        // waitForImages first: html2canvas snapshots synchronously, so an
+        // image still decoding is simply missing from the capture.
+        await waitForImages(captureArea);
+        html2canvas(captureArea, { scale: 3, useCORS: true, backgroundColor: null }).then(canvas => {
           captureArea.style.boxShadow = origShadow;
           const a = document.createElement('a');
           a.href = canvas.toDataURL("image/png");
@@ -753,7 +761,9 @@ export default class StudentsController {
           const captureArea = document.getElementById('temp-idcard-capture');
           // Strip box-shadow for clean export
           captureArea.style.boxShadow = 'none';
-          const canvas = await html2canvas(captureArea, { scale: 3, logging: false, backgroundColor: null });
+          // useCORS for the same reason as the single download above: the
+          // photo is served from Vercel Blob and cannot be drawn without it.
+          const canvas = await html2canvas(captureArea, { scale: 3, useCORS: true, logging: false, backgroundColor: null });
           const base64Data = canvas.toDataURL("image/png").replace(/^data:image\/(png|jpg);base64,/, "");
           
           const safeName = (student.name || `PGP_Card_${student.pgp}`).replace(/[^a-zA-Z0-9 \-_]/g, '').trim().replace(/\s+/g, '_');
