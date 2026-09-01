@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SISC e-Gatepass System — Apply for your school gatepass online">
+  <meta name="theme-color" content="#422467">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="stylesheet" href="css/landing.css">
+  <title>SISC e-Gatepass | Official School Gatepass Portal</title>
+  <style>
+    /* ── MODAL SHARED ── */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: rgba(14, 9, 26, 0.97);
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 42px;
+      width: 100%;
+      max-width: 460px;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      transform: translateY(28px) scale(0.97);
+      transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .modal-backdrop.open .modal {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .modal::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .modal::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--line);
+      color: var(--faint);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+      line-height: 1;
+    }
+
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--paper);
+    }
+
+    .modal-icon {
+      width: 58px;
+      height: 58px;
+      border-radius: 16px;
+      background: rgba(66, 36, 103, 0.12);
+      border: 1px solid rgba(66, 36, 103, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      margin-bottom: 20px;
+    }
+
+    .modal-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--paper);
+      margin-bottom: 6px;
+    }
+
+    .modal-sub {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1.5px solid rgba(255, 255, 255, 0.07);
+      color: var(--paper);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-input:focus {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(0, 229, 200, 0.1);
+    }
+
+    .form-input::placeholder {
+      color: var(--faint);
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--faint);
+      pointer-events: none;
+    }
+
+    .input-wrap .form-input {
+      padding-left: 38px;
+    }
+
+    .toggle-pw {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--faint);
+      cursor: pointer;
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      transition: color 0.2s;
+    }
+
+    .toggle-pw:hover {
+      color: var(--muted);
+    }
+
+    .login-error {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      border-radius: 10px;
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #f87171;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 18px;
+    }
+
+    .login-error.show {
+      display: flex;
+    }
+
+    .login-error.is-notice {
+      background: rgba(0, 229, 200, 0.07);
+      border-color: rgba(0, 229, 200, 0.25);
+      color: #5eead4;
+    }
+
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateY(0) scale(1) translateX(0);
+      }
+
+      20% {
+        transform: translateY(0) scale(1) translateX(-8px);
+      }
+
+      40% {
+        transform: translateY(0) scale(1) translateX(8px);
+      }
+
+      60% {
+        transform: translateY(0) scale(1) translateX(-5px);
+      }
+
+      80% {
+        transform: translateY(0) scale(1) translateX(5px);
+      }
+    }
+
+    .modal.shake {
+      animation: shake 0.4s ease;
+    }
+
+    .btn-login-submit {
+      width: 100%;
+      padding: 14px;
+      border-radius: 100px;
+      background: linear-gradient(135deg, var(--purple-l), var(--purple));
+      color: var(--paper);
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      margin-top: 6px;
+      box-shadow: 0 6px 26px rgba(66, 36, 103, 0.4);
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    }
+
+    .btn-login-submit:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 34px rgba(66, 36, 103, 0.55);
+    }
+
+    .btn-login-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .login-divider {
+      text-align: center;
+      font-size: 11px;
+      color: var(--faint);
+      letter-spacing: 0.05em;
+      margin-top: 20px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    /* ── CARD SHOWCASE ── */
+    .showcase {
+      padding: 0 0 30px;
+    }
+
+    .cards-row {
+      display: flex;
+      gap: 36px;
+      justify-content: center;
+      flex-wrap: wrap;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .pgp-card {
+      width: 320px;
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+      cursor: default;
+      border: 1px solid var(--line);
+      transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+    }
+
+    .pgp-card:hover {
+      transform: translateY(-10px);
+      border-color: rgba(0, 229, 200, 0.3);
+      box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+    }
+
+    .pgp-card img {
+      width: 100%;
+      display: block;
+    }
+
+    .pgp-card-label {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10, 7, 20, 0.88);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--line);
+      border-radius: 100px;
+      padding: 4px 16px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--teal);
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 640px) {
+      .modal {
+        padding: 28px 22px;
+      }
+
+      .pgp-card {
+        width: 280px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Ambient backdrop -->
+  <div class="aurora" aria-hidden="true">
+    <span class="a1"></span>
+    <span class="a2"></span>
+    <span class="a3"></span>
+    <i class="d1"></i>
+    <i class="d2"></i>
+  </div>
+
+  <!-- Pointer spotlight -->
+  <div class="spotlight" id="spotlight" aria-hidden="true"></div>
+
+  <!-- Noise grain -->
+  <div class="grain" aria-hidden="true"></div>
+
+  <!-- Scroll progress bar -->
+  <div class="progress" aria-hidden="true"></div>
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="nav" role="banner">
+    <a href="#" class="brand" aria-label="SISC e-Gatepass home">
+      <div class="brand-seal">
+        <img src="SISC_logo.png" alt="SISC">
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">e-Gatepass</span>
+        <span class="brand-sy">SISC &bull; SY 2026–2027</span>
+      </div>
+    </a>
+    <nav class="nav-actions" aria-label="Main navigation">
+      <a href="newForm.html" class="btn btn-solid apply-short" aria-label="Apply for Gatepass">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="12" y1="18" x2="12" y2="12" />
+          <line x1="9" y1="15" x2="15" y2="15" />
+        </svg>
+        <span>Apply Now</span>
+      </a>
+      <button class="btn btn-line" id="btn-open-login" aria-haspopup="dialog">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+          <polyline points="10 17 15 12 10 7" />
+          <line x1="15" y1="12" x2="3" y2="12" />
+        </svg>
+        Staff Login
+      </button>
+    </nav>
+  </header>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main>
+
+    <!-- ── HERO ── -->
+    <section class="hero">
+      <div class="seal-stage" aria-hidden="true">
+        <div class="seal-plate">
+          <img src="SISC_logo.png" alt="SISC seal">
+        </div>
+      </div>
+
+      <p class="eyebrow">Now accepting applications &bull; SY 2026–2027</p>
+      <h1>Digital Gatepass System</h1>
+      <p class="hero-sub">
+        Apply for your Permanent Gatepass online — fast, secure, and paperless.
+        Verified by QR code at every school gate, every single day.
+      </p>
+
+      <div class="hero-actions">
+        <a href="newForm.html" class="btn btn-solid btn-lg">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="12" y1="18" x2="12" y2="12" />
+            <line x1="9" y1="15" x2="15" y2="15" />
+          </svg>
+          Apply for Gatepass
+          <svg class="arr" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+          </svg>
+        </a>
+        <button class="btn btn-line btn-lg" id="hero-login-btn" aria-haspopup="dialog">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+            <polyline points="10 17 15 12 10 7" />
+            <line x1="15" y1="12" x2="3" y2="12" />
+          </svg>
+          Staff Login
+        </button>
+      </div>
+
+      <div class="scroll-hint" aria-hidden="true">
+        <i></i>
+        Scroll to explore
+      </div>
+    </section>
+
+    <!-- ── MARQUEE ── -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <span>Permanent Gatepass</span>
+        <span>QR Verified</span>
+        <span>Biometric Ready</span>
+        <span>Cloud Synced</span>
+        <span>Offline Capable</span>
+        <span>Parent Alerts</span>
+        <span>Role-Based Access</span>
+        <span>Paperless Process</span>
+        <!-- duplicate for seamless loop -->
+        <span>Permanent Gatepass</span>
+        <span>QR Verified</span>
+        <span>Biometric Ready</span>
+        <span>Cloud Synced</span>
+        <span>Offline Capable</span>
+        <span>Parent Alerts</span>
+        <span>Role-Based Access</span>
+        <span>Paperless Process</span>
+      </div>
+    </div>
+
+    <!-- ── HOW IT WORKS ── -->
+    <section>
+      <div class="shell">
+        <div class="sec-head center reveal">
+          <p class="eyebrow center">Process</p>
+          <h2>How It Works</h2>
+          <p>Three simple steps to get your official permanent gatepass reviewed and approved.</p>
+        </div>
+
+        <div class="steps">
+          <div class="step reveal" data-delay="0">
+            <span class="step-no">01</span>
+            <h3>Submit Your Application</h3>
+            <p>Fill out the online form with your student details and guardian contact information. It only takes a
+              minute.</p>
+          </div>
+          <div class="step reveal" data-delay="0.12">
+            <span class="step-no">02</span>
+            <h3>Admin Review</h3>
+            <p>The school admin reviews your application. You will be notified by email once it has been reviewed and a
+              decision is made.</p>
+          </div>
+          <div class="step reveal" data-delay="0.24">
+            <span class="step-no">03</span>
+            <h3>Receive Your Gatepass</h3>
+            <p>Once approved, your digital gatepass with a unique QR code is issued — ready to use at all school gate
+              checkpoints.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── GATEPASS SAMPLES ── -->
+    <section class="tight showcase">
+      <div class="shell">
+        <div class="sec-head center reveal" style="margin-bottom:38px;">
+          <p class="eyebrow center">Gatepass Design</p>
+          <h2>What Your Gatepass Looks Like</h2>
+          <p style="color:var(--muted);">A smart ID card with your student information and a unique QR code — scanned at
+            every gate for instant, contactless verification.</p>
+        </div>
+        <div class="cards-row">
+          <div class="pgp-card reveal" data-delay="0">
+            <img src="PGP_Card_1784540906451.png" alt="Sample Gatepass Design A" loading="lazy">
+            <div class="pgp-card-label">&#10022; Sample Gatepass — Design A</div>
+          </div>
+          <div class="pgp-card reveal" data-delay="0.12">
+            <img src="PGP_Card_1784609066593.png" alt="Sample Gatepass Design B" loading="lazy">
+            <div class="pgp-card-label">&#10022; Sample Gatepass — Design B</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── STATS ── -->
+    <section class="tight">
+      <div class="shell">
+        <div class="sec-head center reveal">
+          <p class="eyebrow center">By the Numbers</p>
+          <h2>Trusted by the Southville Community</h2>
+        </div>
+        <div class="stats">
+          <div class="stat reveal" data-delay="0">
+            <b data-count="1200">0</b>
+            <span>Students Enrolled</span>
+          </div>
+          <div class="stat reveal" data-delay="0.1">
+            <b data-count="99">0</b>
+            <span>% Gate Clearance Rate</span>
+          </div>
+          <div class="stat reveal" data-delay="0.2">
+            <b data-count="4">0</b>
+            <span>Gate Checkpoints</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CTA ── -->
+    <section class="tight">
+      <div class="shell">
+        <div class="cta-wrap reveal">
+          <div class="cta-card">
+            <p class="eyebrow center">Get Started Today</p>
+            <h2>Ready to Apply for Your Permanent Gatepass?</h2>
+            <p>Complete the online application form in minutes. No paper, no queues — just a fast, digital process
+              backed by the school's official system.</p>
+            <div class="cta-actions">
+              <a href="newForm.html" class="btn btn-solid btn-lg">
+                Apply for Gatepass
+                <svg class="arr" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
+              </a>
+              <button class="btn btn-line btn-lg" id="cta-login-btn" aria-haspopup="dialog">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                  <polyline points="10 17 15 12 10 7" />
+                  <line x1="15" y1="12" x2="3" y2="12" />
+                </svg>
+                Staff Login
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer>
+    <div style="display:flex;align-items:center;gap:9px;">
+      <img src="SISC_logo.png" alt="SISC"
+        style="width:22px;height:22px;object-fit:contain;border-radius:5px;background:#fff;padding:2px;">
+      SISC e-Gatepass System
+    </div>
+    <div>&copy; 2026 Southville International School. All rights reserved.</div>
+  </footer>
+
+  <!-- ═══ STAFF LOGIN MODAL ═══ -->
+  <div class="modal-backdrop" id="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
+    <div class="modal" id="login-modal-box">
+      <button class="modal-close" id="login-modal-close" aria-label="Close">&#x2715;</button>
+
+      <div class="modal-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7c5aad" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+      </div>
+      <div class="modal-title" id="login-modal-title">Staff Access</div>
+      <div class="modal-sub">Enter your credentials to access the e-Gatepass dashboard.</div>
+
+      <div class="login-error" id="login-error" role="alert" aria-live="assertive">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+        <span id="login-error-msg">Invalid username or password.</span>
+      </div>
+
+      <form id="login-form" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="l-username">Username</label>
+          <div class="input-wrap">
+            <span class="input-icon" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </span>
+            <input class="form-input" id="l-username" type="text" placeholder="Enter username" autocomplete="username"
+              required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="l-password">Password</label>
+          <div class="input-wrap">
+            <span class="input-icon" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </span>
+            <input class="form-input" id="l-password" type="password" placeholder="Enter password"
+              autocomplete="current-password" required>
+            <button type="button" class="toggle-pw" id="toggle-pw" aria-label="Show or hide password">
+              <svg id="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-login-submit" id="btn-login-submit">Secure Login</button>
+      </form>
+
+      <div class="login-divider">
+        Access is restricted to authorized personnel only.<br>All logins are tracked and logged.
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    /* ── STAFF LOGIN ──────────────────────────────────────────────── */
+    import { SHEETS_API_URL as SHEETS_API, APP_PAGE, STORAGE_KEYS } from './js/config.js';
+
+    async function hashPassword(pw) {
+      if (!window.crypto || !window.crypto.subtle) {
+        throw new Error(
+          'Secure login is unavailable over plain HTTP. Open this site via HTTPS or localhost.'
+        );
+      }
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function fetchUsers() {
+      try {
+        const res = await fetch(`${SHEETS_API}?action=getUsers&_t=${Date.now()}`, { cache: 'no-store' });
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(json.data));
+          return json.data;
+        }
+      } catch (_) { }
+      return JSON.parse(localStorage.getItem(STORAGE_KEYS.users) || '[]');
+    }
+
+    const loginModal = document.getElementById('login-modal');
+    const loginModalBox = document.getElementById('login-modal-box');
+    const loginError = document.getElementById('login-error');
+    const loginErrMsg = document.getElementById('login-error-msg');
+
+    function openLoginModal() {
+      loginModal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      loginError.classList.remove('show', 'is-notice');
+      document.getElementById('login-form').reset();
+      setTimeout(() => document.getElementById('l-username').focus(), 320);
+    }
+
+    function closeLoginModal() {
+      loginModal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function showLoginError(msg) {
+      loginErrMsg.textContent = msg;
+      loginError.classList.remove('is-notice');
+      loginError.classList.add('show');
+      loginModalBox.classList.remove('shake');
+      void loginModalBox.offsetWidth;
+      loginModalBox.classList.add('shake');
+      loginModalBox.addEventListener('animationend', () => loginModalBox.classList.remove('shake'), { once: true });
+    }
+
+    document.getElementById('btn-open-login').addEventListener('click', openLoginModal);
+    document.getElementById('hero-login-btn').addEventListener('click', openLoginModal);
+    document.getElementById('cta-login-btn').addEventListener('click', openLoginModal);
+    document.getElementById('login-modal-close').addEventListener('click', closeLoginModal);
+    loginModal.addEventListener('click', e => { if (e.target === loginModal) closeLoginModal(); });
+
+    document.getElementById('toggle-pw').addEventListener('click', () => {
+      const pw = document.getElementById('l-password');
+      const ico = document.getElementById('eye-icon');
+      const show = pw.type === 'password';
+      pw.type = show ? 'text' : 'password';
+      ico.innerHTML = show
+        ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
+        : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    });
+
+    document.getElementById('login-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const username = document.getElementById('l-username').value.trim();
+      const password = document.getElementById('l-password').value;
+      if (!username || !password) return;
+
+      const btn = document.getElementById('btn-login-submit');
+      btn.disabled = true;
+      btn.textContent = 'Verifying…';
+      loginError.classList.remove('show');
+
+      try {
+        const [users, hashedPw] = await Promise.all([fetchUsers(), hashPassword(password)]);
+
+        if (users.length === 0) {
+          showLoginError('No user accounts found. Please contact your administrator.');
+          btn.disabled = false; btn.textContent = 'Secure Login'; return;
+        }
+
+        const user = users.find(u =>
+          u.username === username &&
+          (u.password === hashedPw || u.password === password) &&
+          (!u.status || u.status.toLowerCase() === 'active')
+        );
+
+        if (!user) {
+          showLoginError('Invalid username or password.');
+          document.getElementById('l-password').value = '';
+          btn.disabled = false; btn.textContent = 'Secure Login'; return;
+        }
+
+        localStorage.setItem(STORAGE_KEYS.session, JSON.stringify({
+          username: user.username, name: user.name, role: user.role,
+          gate: user.gate || '', loginTime: new Date().toISOString(), lastActivity: Date.now()
+        }));
+        sessionStorage.setItem(STORAGE_KEYS.browserAlive, '1');
+        btn.textContent = 'Redirecting…';
+        window.location.replace(APP_PAGE);
+
+      } catch (err) {
+        console.error('Login failed:', err);
+        showLoginError(
+          /secure login is unavailable/i.test(err && err.message ? err.message : '')
+            ? err.message
+            : 'Network error. Please try again.'
+        );
+        btn.disabled = false; btn.textContent = 'Secure Login';
+      }
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && loginModal.classList.contains('open')) closeLoginModal();
+    });
+
+    /* ── Notices handed back by app.html (sign-out, expired session, …) ──
+       app.html redirects here with ?notice=… — show it inside the login
+       modal so the user always ends up on this one main login form.      */
+    (function showRedirectNotice() {
+      const params = new URLSearchParams(window.location.search);
+      const notice = params.get('notice');
+      if (!notice) return;
+
+      // Clean the URL so a refresh does not repeat the message.
+      history.replaceState(null, '', window.location.pathname);
+
+      openLoginModal();
+      loginErrMsg.textContent = notice;
+      loginError.classList.add('show', 'is-notice');
+    })();
+  </script>
+  <script src="js/landing.js"></script>
+</body>
+
+</html>

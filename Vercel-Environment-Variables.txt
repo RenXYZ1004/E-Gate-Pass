@@ -1,0 +1,33 @@
+Vercel > Project > Settings > Environment Variables
+
+Required for email sending:
+GMAIL_CLIENT_ID = your Google OAuth Client ID
+GMAIL_CLIENT_SECRET = your Google OAuth Client Secret
+GMAIL_REFRESH_TOKEN = your generated Google OAuth refresh token
+GMAIL_USER_EMAIL = lux_maingate@southville.edu.ph
+
+Optional:
+GMAIL_FROM_NAME = Southville Gatepass System
+APP_BASE_URL = https://e-gate-pass-theta.vercel.app
+
+Required only when using the OAuth helper endpoints to generate a new refresh token:
+GOOGLE_REDIRECT_URI = https://e-gate-pass-theta.vercel.app/api/oauth-callback
+
+Google Cloud Console > OAuth Client > Authorized redirect URI:
+https://e-gate-pass-theta.vercel.app/api/oauth-callback
+
+OAuth authorization URL after deployment:
+https://e-gate-pass-theta.vercel.app/api/oauth-start
+
+Use the same redirect URI exactly in Google Cloud and in GOOGLE_REDIRECT_URI.
+
+Environment variables must be enabled for Production. Vercel applies changed environment variables to new deployments, so redeploy after saving them.
+
+Do NOT commit client secrets, refresh tokens, .env files, or gmail-oauth-token.json to GitHub.
+
+
+PHOTO STORAGE (Vercel Blob)
+BLOB_READ_WRITE_TOKEN=Optional static Vercel Blob read/write token
+BLOB_READ_WRITE_TOKEN_STORE_ID=Vercel Blob store ID (created automatically when using the custom prefix shown in Vercel Storage)
+
+Create a Blob store in Vercel and copy its token into the Production environment.

@@ -1,0 +1,29 @@
+node_modules/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+api/email-config.php
+api/gmail-oauth-token.json
+gmail-oauth-token.json
+
+# Local design scratch files
+preview.html
+preview_final.html
+preview_compact.html
+preview_fullwidth.html
+preview_hybrid.html
+preview_horizontal.html
+preview_mobile.html
+
+# Archives
+*.rar
+*.zip
+
+# Recorded API responses — these contain student PII and staff passwords
+response.json
+response_new.json
+response*.json
