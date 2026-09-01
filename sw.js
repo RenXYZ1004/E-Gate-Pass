@@ -11,10 +11,18 @@
 //     no longer abort the whole install (cache.addAll is all-or-nothing).
 // ════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'pgp-cache-v48.0.0';
+const CACHE_NAME = 'pgp-cache-v49.0.0';
 
 // Files that make up the app shell — always revalidated against the network.
+//
+// Both URL forms are listed on purpose. In production vercel.json sets
+// cleanUrls, so a navigation lands on / and /app; served from a plain static
+// server (XAMPP, Live Server) only the .html form exists. cacheSafely
+// swallows a miss, so whichever pair does not exist is simply skipped and
+// offline works either way.
 const APP_SHELL = [
+  './',
+  './app',
   './index.html',
   './app.html',
   './css/styles.css',
@@ -118,7 +126,9 @@ self.addEventListener('fetch', event => {
 
   // Never intercept the Sheets backend or the Apps Script application form.
   if (url.hostname.includes('script.google.com')) return;
-  if (url.pathname.endsWith('/newForm.html')) return;
+  // Matches both the clean route and the extension, since cleanUrls serves
+  // this page at /newForm and redirects /newForm.html to it.
+  if (url.pathname.endsWith('/newForm') || url.pathname.endsWith('/newForm.html')) return;
   // Nor our own serverless API — those responses must never be cached.
   if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) return;
 
@@ -141,9 +151,11 @@ async function networkFirst(request) {
   } catch (err) {
     const cached = await cache.match(request);
     if (cached) return cached;
-    // A navigation with nothing cached: fall back to the app shell.
+    // A navigation with nothing cached: fall back to the app shell. Try the
+    // clean route first, then the extension, so this works under cleanUrls
+    // and on a plain static server alike.
     if (request.mode === 'navigate') {
-      const shell = await cache.match('./app.html');
+      const shell = await cache.match('./app') || await cache.match('./app.html');
       if (shell) return shell;
     }
     return new Response('You are offline and this resource is not cached.', {

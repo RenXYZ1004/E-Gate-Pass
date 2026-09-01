@@ -10,10 +10,15 @@ export const SHEETS_API_URL =
 
 // The one and only login page. Everything that needs a login sends the
 // user here — there is no second, in-app login form.
-export const LOGIN_PAGE = 'index.html';
+//
+// These are extensionless because vercel.json sets cleanUrls, which serves
+// index.html at / and app.html at /app, and 308-redirects the .html form.
+// They stay relative so the app still works when it is served from a
+// subdirectory (the XAMPP layout in the README) rather than a domain root.
+export const LOGIN_PAGE = './';
 
 // Signed-in application shell.
-export const APP_PAGE = 'app.html';
+export const APP_PAGE = './app';
 
 // localStorage / sessionStorage keys.
 export const STORAGE_KEYS = {

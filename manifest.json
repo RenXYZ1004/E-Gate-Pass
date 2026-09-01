@@ -2,7 +2,7 @@
   "name": "e-gatepass",
   "short_name": "e-gatepass",
   "description": "e-gatepass System",
-  "start_url": "./app.html",
+  "id": "/app.html",
   "display": "standalone",
   "background_color": "#f8f9fa",
   "theme_color": "#00c9b1",
@@ -14,5 +14,6 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "start_url": "./app"
 }

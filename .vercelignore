@@ -29,6 +29,9 @@ Vercel-Environment-Variables.txt
 
 # ── Development scratch files ───────────────────────────────────
 id_preview_new.html
-PGP_Card_*.png
 # Duplicate of SISC_logo.png, which the e-mail templates use and which stays.
 SISC LOGO.png
+
+# NOT excluded, despite looking like scratch files: PGP_Card_*.png are the
+# two "Sample Gatepass" images on the landing page (index.html). Both show
+# demo data (Rizal, Jose P. / PGP-DEMO999), not a real student.
