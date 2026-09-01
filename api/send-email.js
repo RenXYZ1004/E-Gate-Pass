@@ -272,11 +272,97 @@ module.exports = async function handler(req, res) {
     }
 
     try {
-      await getAccessToken(config);
+      const accessToken = await getAccessToken(config);
+      const checks = [{ stage: 'oauth', ok: true, detail: 'Google issued an access token.' }];
+
+      // Which mailbox does this token actually control? A token minted by the
+      // wrong Google account refreshes perfectly and then fails at the SMTP
+      // handshake with 535-5.7.8, because the account that consented is not
+      // the account nodemailer authenticates as. Comparing the two separates
+      // that from a Workspace policy problem. https://mail.google.com/ is the
+      // full-access scope, so this profile read is already permitted.
+      let tokenOwner = null;
+      try {
+        const profileRes = await fetch(
+          'https://gmail.googleapis.com/gmail/v1/users/me/profile',
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        const profile = await profileRes.json().catch(() => ({}));
+        if (profileRes.ok && profile.emailAddress) {
+          tokenOwner = profile.emailAddress;
+          const matches = tokenOwner.toLowerCase() === config.userEmail.toLowerCase();
+          checks.push({
+            stage: 'identity', ok: matches,
+            detail: matches
+              ? `The token belongs to ${tokenOwner}, which matches GMAIL_USER_EMAIL.`
+              : `The token belongs to ${tokenOwner}, but GMAIL_USER_EMAIL is ${config.userEmail}.`
+          });
+        } else {
+          checks.push({
+            stage: 'identity', ok: false,
+            detail: `Could not read the mailbox profile: ${profile.error && profile.error.message
+              ? profile.error.message : `HTTP ${profileRes.status}`}.`
+          });
+        }
+      } catch (e) {
+        checks.push({ stage: 'identity', ok: false, detail: `Profile lookup failed: ${e.message}` });
+      }
+
+      // Authenticate against Gmail's SMTP server without sending anything.
+      // verify() runs the same handshake a real send would, so a 535 shows up
+      // here instead of only when a parent's message fails.
+      let smtpOk = false, smtpDetail = '';
+      try {
+        await nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            type: 'OAuth2', user: config.userEmail,
+            clientId: config.clientId, clientSecret: config.clientSecret,
+            refreshToken: config.refreshToken, accessToken
+          }
+        }).verify();
+        smtpOk = true;
+        smtpDetail = 'Gmail accepted the SMTP login.';
+      } catch (e) {
+        smtpDetail = (e && e.message) || String(e);
+      }
+      checks.push({ stage: 'smtp', ok: smtpOk, detail: smtpDetail });
+
+      // The SMTP login is the verdict: it is exactly what a real send does.
+      // The identity probe only explains a failure — a token whose profile
+      // cannot be read still sends mail perfectly well, so it must not by
+      // itself report the configuration as broken.
+      const identityMismatch = !!tokenOwner &&
+        tokenOwner.toLowerCase() !== config.userEmail.toLowerCase();
+
+      let stage = 'ready', reason, fix = null;
+      if (smtpOk) {
+        reason = 'Gmail accepted the SMTP login. Sending works. No message was sent by this check.';
+        if (identityMismatch) {
+          reason += ` Note: the token belongs to ${tokenOwner}, not ${config.userEmail}.`;
+        }
+      } else if (identityMismatch) {
+        stage = 'identity';
+        reason = `The token belongs to ${tokenOwner}, but GMAIL_USER_EMAIL is ${config.userEmail}. ` +
+                 `Gmail refused the SMTP login: ${smtpDetail}`;
+        fix = `Re-run /api/oauth-start while signed in as ${config.userEmail} — not ${tokenOwner} — ` +
+              `and save the token it returns as GMAIL_REFRESH_TOKEN. Alternatively set ` +
+              `GMAIL_USER_EMAIL to ${tokenOwner} if that is the address mail should come from.`;
+      } else {
+        stage = 'smtp';
+        reason = smtpDetail;
+        fix = /535|BadCredentials|Username and Password not accepted/i.test(smtpDetail)
+          ? 'The OAuth token is valid but Gmail refused the SMTP session. Most often the Workspace ' +
+            'admin has not enabled IMAP/SMTP for this mailbox: Admin console > Apps > Google ' +
+            'Workspace > Gmail > End User Access > turn on IMAP access, then wait a few minutes. ' +
+            'If that is already on, re-mint the token at /api/oauth-start signed in as ' +
+            config.userEmail + '.'
+          : 'See the failing stage below.';
+      }
+
       return res.status(200).json({
-        selftest: true, ok: true, stage: 'oauth', present,
-        sender: config.userEmail,
-        reason: 'Google issued an access token. The mail configuration is working. No message was sent.'
+        selftest: true, ok: smtpOk, stage,
+        present, sender: config.userEmail, tokenOwner, checks, reason, fix
       });
     } catch (err) {
       const text = (err && err.message) || String(err);
