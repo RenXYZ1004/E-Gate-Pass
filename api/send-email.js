@@ -215,7 +215,13 @@ async function getAccessToken({ clientId, clientSecret, refreshToken }) {
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok || !data.access_token) {
-    throw new Error(`Google OAuth token refresh failed (HTTP ${response.status}): ${data.error_description || data.error || 'No access token returned.'}`);
+    // Report Google's code *and* its description. The code is the part that
+    // says what to do — invalid_grant means re-mint the token, invalid_client
+    // means the id/secret pair is wrong — and reporting only the description
+    // threw that away.
+    const detail = [data.error, data.error_description].filter(Boolean).join(': ') ||
+      'No access token returned.';
+    throw new Error(`Google OAuth token refresh failed (HTTP ${response.status}): ${detail}`);
   }
   return data.access_token;
 }
@@ -224,7 +230,15 @@ module.exports = async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
 
-  if (req.method !== 'POST') {
+  // GET ?selftest=1 answers one question — can this deployment obtain a Gmail
+  // access token — and sends nothing. A failing send returns 502 with Google's
+  // reason inside, but the only way to see it used to be to try to mail a real
+  // parent. This separates "is the mail configuration working" from "deliver
+  // this message". It never echoes a secret, only whether each variable is set.
+  const isSelfTest = req.method === 'GET' &&
+    String((req.query && req.query.selftest) || '') === '1';
+
+  if (req.method !== 'POST' && !isSelfTest) {
     return res.status(405).json({ success: false, message: 'POST request required.' });
   }
 
@@ -239,6 +253,50 @@ module.exports = async function handler(req, res) {
     GMAIL_REFRESH_TOKEN: config.refreshToken,
     GMAIL_USER_EMAIL: config.userEmail
   }).filter(([, value]) => !value).map(([name]) => name);
+
+  if (isSelfTest) {
+    const present = {
+      GMAIL_CLIENT_ID: !!config.clientId,
+      GMAIL_CLIENT_SECRET: !!config.clientSecret,
+      GMAIL_REFRESH_TOKEN: !!config.refreshToken,
+      GMAIL_USER_EMAIL: !!config.userEmail
+    };
+
+    if (missing.length) {
+      return res.status(200).json({
+        selftest: true, ok: false, stage: 'configuration', present,
+        sender: config.userEmail || null,
+        reason: `Missing environment variable(s): ${missing.join(', ')}.`,
+        fix: 'Add them in Vercel > Settings > Environment Variables (Production), then redeploy.'
+      });
+    }
+
+    try {
+      await getAccessToken(config);
+      return res.status(200).json({
+        selftest: true, ok: true, stage: 'oauth', present,
+        sender: config.userEmail,
+        reason: 'Google issued an access token. The mail configuration is working. No message was sent.'
+      });
+    } catch (err) {
+      const text = (err && err.message) || String(err);
+      // Map Google's two usual refusals onto what actually has to change.
+      let fix = 'Check the four GMAIL_* values in Vercel, then redeploy.';
+      if (/invalid_grant|expired or revoked/i.test(text)) {
+        fix = 'The refresh token is no longer valid — it was revoked, or it expired because the ' +
+              'Google Cloud OAuth consent screen is still in Testing (tokens last 7 days there). ' +
+              'Set the consent screen to Internal, then mint a new token at /api/oauth-start and ' +
+              'save it as GMAIL_REFRESH_TOKEN.';
+      } else if (/invalid_client|unauthorized_client/i.test(text)) {
+        fix = 'GMAIL_CLIENT_ID and GMAIL_CLIENT_SECRET do not belong to the same OAuth client, or ' +
+              'the secret was reset in Google Cloud Console. Copy both from the same client.';
+      }
+      return res.status(200).json({
+        selftest: true, ok: false, stage: 'oauth', present,
+        sender: config.userEmail, reason: text, fix
+      });
+    }
+  }
 
   if (missing.length) {
     return res.status(500).json({

@@ -90,7 +90,14 @@ export default class AppController {
       let result = null;
       try { result = await response.json(); } catch (_) { }
       if (!response.ok || !result || !result.success) {
-        throw new Error((result && (result.message || result.error)) || `Email Api returned HTTP ${response.status}`);
+        // `error` carries the specific reason (Google's own text on a 502);
+        // `message` is the generic "Email could not be sent." Preferring
+        // `message` here meant every send failure looked identical and the
+        // real cause never reached the screen or the log.
+        throw new Error(
+          (result && (result.error || result.message)) ||
+          `Email Api returned HTTP ${response.status}`
+        );
       }
       return result;
     }

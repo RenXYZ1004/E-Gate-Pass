@@ -151,8 +151,20 @@ export function resolvePhotoUrl(photoValue) {
     return trimmed;
   }
 
-  // Case 4: Unknown format — treat as a path anyway
-  return trimmed;
+  // Case 4: a bare path or filename that actually names an image.
+  if (/^[\w./-]+\.(jpe?g|png|webp|gif|bmp|avif)$/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  // Anything else is not a photo. The Photo column has historically held
+  // Apps Script exception text — "Access denied: DriveApp.", "You do not have
+  // permission…", "NO PHOTO DATA RECEIVED", and the same in Filipino and
+  // Korean — because an older version of the backend wrote its error into the
+  // cell. Returning that verbatim put it in an <img src>, so the browser tried
+  // to resolve "Access denied:" as a URL scheme and logged
+  // ERR_UNKNOWN_URL_SCHEME for every affected student, on every render and in
+  // every emailed pass card. Treat it as no photo and fall back to initials.
+  return '';
 }
 
 /**
