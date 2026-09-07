@@ -33,92 +33,55 @@ export function debounce(func, wait = 300) {
   };
 }
 
-export function compressImage(file, maxWidth = 250, maxHeight = 250, quality = 0.7) {
+export function compressImageToBlob(file, maxWidth = 250, maxHeight = 250, quality = 0.78) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = event => {
-      const img = new Image();
-      img.src = event.target.result;
-      img.onload = () => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      try {
         let width = img.width;
         let height = img.height;
-
-        if (width > height) {
-          if (width > maxWidth) {
-            height = Math.round(height * (maxWidth / width));
-            width = maxWidth;
-          }
-        } else {
-          if (height > maxHeight) {
-            width = Math.round(width * (maxHeight / height));
-            height = maxHeight;
-          }
-        }
+        const scale = Math.min(1, maxWidth / width, maxHeight / height);
+        width = Math.max(1, Math.round(width * scale));
+        height = Math.max(1, Math.round(height * scale));
 
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
-        
-        let format = 'image/webp';
-        let dataUrl = canvas.toDataURL(format, quality);
-        
-        // If the browser doesn't support WebP encoding, it returns a PNG.
-        if (dataUrl.startsWith('data:image/png')) {
-          format = 'image/jpeg';
-          // JPEG doesn't support transparency, so we add a white background
-          ctx.globalCompositeOperation = "destination-over";
-          ctx.fillStyle = "#FFFFFF";
-          ctx.fillRect(0, 0, width, height);
-          ctx.globalCompositeOperation = "source-over"; // reset
-          dataUrl = canvas.toDataURL(format, quality);
-        }
-        
-        // Compress further if the Base64 string is too large for Google Sheets (limit 50,000 chars)
-        while (dataUrl.length > 45000 && quality > 0.1) {
-          quality -= 0.1;
-          dataUrl = canvas.toDataURL(format, quality);
-        }
 
-        // Failsafe: if it's STILL too big, cut dimensions in half
-        if (dataUrl.length > 45000) {
-          const failsafeCanvas = document.createElement('canvas');
-          failsafeCanvas.width = width * 0.5;
-          failsafeCanvas.height = height * 0.5;
-          const fsCtx = failsafeCanvas.getContext('2d');
-          if (format === 'image/jpeg') {
-              fsCtx.fillStyle = "#FFFFFF";
-              fsCtx.fillRect(0, 0, failsafeCanvas.width, failsafeCanvas.height);
+        canvas.toBlob(blob => {
+          URL.revokeObjectURL(objectUrl);
+          if (!blob) {
+            reject(new Error('Could not encode image.'));
+            return;
           }
-          fsCtx.drawImage(canvas, 0, 0, failsafeCanvas.width, failsafeCanvas.height);
-          dataUrl = failsafeCanvas.toDataURL(format, 0.5);
-        }
-        
-        console.log('--- COMPRESSION COMPLETE ---');
-        console.log('Final image format:', format);
-        console.log('Final base64 length:', dataUrl.length);
-        
-        resolve(dataUrl);
-      };
-      img.onerror = error => reject(error);
+          resolve(blob);
+        }, 'image/jpeg', quality);
+      } catch (err) {
+        URL.revokeObjectURL(objectUrl);
+        reject(err);
+      }
     };
-    reader.onerror = error => reject(error);
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Could not read image.'));
+    };
+    img.src = objectUrl;
   });
 }
 
 // ════════════════════════════════════════════════════════════════
-// Photo URL Resolver — Works with Base64, local paths, and URLs
+// Photo URL Resolver — Works with Blob/remote URLs and legacy local paths
 // ════════════════════════════════════════════════════════════════
 
 /**
  * Resolve a photo value from the database into a valid image src.
- * Handles three formats:
- *   1. Base64:     "data:image/webp;base64,UklGR..."  → used as-is
- *   2. Local path: "photos/PGP-001.webp"              → resolved relative to app root
- *   3. URL:        "https://drive.google.com/..."      → used as-is
- *   4. Empty/null                                      → returns '' (no image)
+ * Handles URL values written to the Photo column plus legacy local image paths.
+ * Empty/null returns ''.
  * 
  * @param {string} photoValue — the raw value from the student record
  * @returns {string} A valid src attribute for an <img> tag, or '' if empty
@@ -135,23 +98,18 @@ export function resolvePhotoUrl(photoValue) {
   const trimmed = String(photoValue || '').trim();
   if (!trimmed) return '';
 
-  // Case 1: Already a Base64 data URI — use as-is
-  if (trimmed.startsWith('data:image')) {
-    return trimmed;
-  }
-
-  // Case 2: A full URL (Google Drive, Cloudinary, etc.) — use as-is
+  // A full URL (Vercel Blob, Drive, Cloudinary, etc.) — use as-is
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     return trimmed;
   }
 
-  // Case 3: A local server path (e.g., "photos/PGP-001.webp")
+  // A legacy local server path (e.g., "photos/PGP-001.webp")
   // Resolve relative to the app root
   if (trimmed.startsWith('photos/') || trimmed.startsWith('./photos/')) {
     return trimmed;
   }
 
-  // Case 4: a bare path or filename that actually names an image.
+  // A bare legacy path or filename that actually names an image.
   if (/^[\w./-]+\.(jpe?g|png|webp|gif|bmp|avif)$/i.test(trimmed)) {
     return trimmed;
   }
@@ -177,38 +135,32 @@ export function hasPhoto(photoValue) {
 }
 
 /**
- * Upload a Base64 image to the persistent Vercel Blob endpoint.
- * Returns the permanent Vercel Blob URL on success.
- * Falls back to returning the original Base64 if the upload fails.
- * 
+ * Upload an image Blob/File directly to the persistent Vercel Blob endpoint.
+ * No Base64 conversion and no Base64 fallback are used.
+ *
  * @param {string} studentId — the student's PassID (used as filename)
- * @param {string} base64Data — the full data URI (data:image/webp;base64,...)
- * @returns {Promise<string>} The saved Blob URL or the original Base64
+ * @param {Blob} imageBlob — image bytes to upload
+ * @returns {Promise<string>} The saved Blob URL
  */
-export async function uploadPhotoLocally(studentId, base64Data) {
-  if (!base64Data || !studentId) return base64Data || '';
-
-  try {
-    const res = await fetch('/api/upload-photo', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      // Keep imageData as the canonical field and also send image for
-      // compatibility with older deployed upload-photo functions.
-      body: JSON.stringify({ studentId, imageData: base64Data, image: base64Data })
-    });
-
-    const json = await res.json();
-    if (res.ok && json.success && json.url) {
-      console.log(`[PhotoUpload] Saved to persistent storage: ${json.url}`);
-      return json.url;
-    }
-
-    console.warn('[PhotoUpload] Server rejected:', json.error || `HTTP ${res.status}`);
-    return base64Data;
-  } catch (err) {
-    console.warn('[PhotoUpload] Upload failed; using Base64 fallback:', err.message);
-    return base64Data;
+export async function uploadPhotoLocally(studentId, imageBlob) {
+  if (!studentId || !(imageBlob instanceof Blob)) {
+    throw new Error('A student ID and image file are required.');
   }
+
+  const res = await fetch(`/api/upload-photo?studentId=${encodeURIComponent(studentId)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': imageBlob.type || 'image/jpeg' },
+    body: imageBlob
+  });
+
+  let json = {};
+  try { json = await res.json(); } catch (_) { }
+  if (!res.ok || !json.success || !json.url) {
+    throw new Error(json.error || `Photo upload failed (HTTP ${res.status}).`);
+  }
+
+  console.log(`[PhotoUpload] Saved to persistent storage: ${json.url}`);
+  return json.url;
 }
 
 // ════════════════════════════════════════════════════════════════

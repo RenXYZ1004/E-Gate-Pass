@@ -828,9 +828,8 @@
     IB2: ["Risk-Takers", "Balanced"],
   };
 
-  /* The upload endpoint rejects anything over 4 MB and base64 adds a third
-     on top, so the form stops well short of that rather than letting a photo
-     that can never be stored block a now-mandatory field. */
+  /* Keep uploads below the serverless request limit. The file is sent as
+     image bytes directly; it is never converted to Base64. */
   var MAX_FILE_BYTES = 3 * 1024 * 1024;
   var ALLOWED_EXT = ["jpg", "jpeg", "png"];
 
@@ -1011,38 +1010,6 @@
     });
   });
 
-  /* Reads a file and renames it after the student. */
-  function fileToPayload(fileInput, studentName) {
-    return new Promise(function (resolve, reject) {
-      var file = fileInput.files[0];
-      if (!file) {
-        resolve(null);
-        return;
-      }
-
-      var ext = extensionOf(file.name);
-      if (ALLOWED_EXT.indexOf(ext) === -1) {
-        reject(new Error("Only JPG and PNG files are accepted."));
-        return;
-      }
-      if (ext === "jpeg") ext = "jpg";
-
-      var reader = new FileReader();
-      reader.onload = function () {
-        resolve({
-          base64: reader.result.split(",")[1],
-          mimeType: file.type || (ext === "png" ? "image/png" : "image/jpeg"),
-          fileName: sanitizeForFilename(studentName) + "." + ext,
-          originalFileName: file.name,
-        });
-      };
-      reader.onerror = function () {
-        reject(new Error("Could not read " + file.name + "."));
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
   /* ---------- Photo upload indicator ----------
      One strip under the file input reports every stage the photo goes
      through — reading, uploading, the wait on the server, and the result —
@@ -1072,11 +1039,11 @@
 
   /* XMLHttpRequest rather than fetch: it is the only way to read real upload
      progress out of the browser. */
-  function uploadPhoto(studentId, dataUrl) {
+  function uploadPhoto(studentId, file) {
     return new Promise(function (resolve, reject) {
       var xhr = new XMLHttpRequest();
-      xhr.open("POST", "/api/upload-photo");
-      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.open("POST", "/api/upload-photo?studentId=" + encodeURIComponent(studentId));
+      xhr.setRequestHeader("Content-Type", file.type || "image/jpeg");
 
       xhr.upload.onprogress = function (e) {
         if (!e.lengthComputable) return;
@@ -1116,7 +1083,7 @@
         reject(new Error("The photo upload was cancelled."));
       };
 
-      xhr.send(JSON.stringify({ studentId: studentId, image: dataUrl }));
+      xhr.send(file);
     });
   }
 
@@ -1462,26 +1429,20 @@
       btn.textContent = "Uploading photo…";
       setPhotoProgress(0, "Preparing photo…", "busy");
 
-      var photoPayload;
       try {
-        photoPayload = await fileToPayload($("studentPhoto"), studentName);
-        // validate() already required the file; this guards a form reset or a
-        // file the browser dropped between validation and submit.
-        if (!photoPayload) {
+        var photoFile = $("studentPhoto").files[0];
+        if (!photoFile) {
           throw new Error("Attach the student's photo before submitting.");
         }
 
-        var uploadResult = await uploadPhoto(
-          $("studid").value.trim(),
-          "data:" + photoPayload.mimeType + ";base64," + photoPayload.base64
-        );
+        var uploadResult = await uploadPhoto($("studid").value.trim(), photoFile);
 
         setPhotoProgress(100, "Photo uploaded", "done");
 
         data.studentPhoto = {
           url: uploadResult.url,
-          fileName: photoPayload.fileName,
-          mimeType: photoPayload.mimeType
+          fileName: uploadResult.fileName || photoFile.name,
+          mimeType: uploadResult.contentType || photoFile.type || "image/jpeg"
         };
       } catch (photoErr) {
         setPhotoProgress(

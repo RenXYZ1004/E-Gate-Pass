@@ -571,40 +571,16 @@
     }
     selectedPhotoFile = file;
     photoFileName.textContent = file.name;
-    var reader = new FileReader();
-    reader.onload = function(ev) {
-      photoPreviewImg.src = ev.target.result;
-      photoPlaceholder.style.display = 'none';
-      photoPreviewWrap.classList.add('show');
-    };
-    reader.readAsDataURL(file);
+    photoPreviewImg.src = URL.createObjectURL(file);
+    photoPlaceholder.style.display = 'none';
+    photoPreviewWrap.classList.add('show');
   });
 
-  function compressPhoto(file, maxPx, quality) {
-    return new Promise(function(resolve) {
-      var reader = new FileReader();
-      reader.onload = function(ev) {
-        var img = new Image();
-        img.onload = function() {
-          var w = img.width, h = img.height;
-          var scale = Math.min(1, maxPx / Math.max(w, h));
-          var canvas = document.createElement('canvas');
-          canvas.width = Math.round(w * scale);
-          canvas.height = Math.round(h * scale);
-          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/jpeg', quality));
-        };
-        img.src = ev.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  async function uploadPhoto(dataUrl) {
-    var res = await fetch('/api/upload-photo', {
+  async function uploadPhoto(file, studentId) {
+    var res = await fetch('/api/upload-photo?studentId=' + encodeURIComponent(studentId || 'tgp-photo'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dataUrl: dataUrl, fileName: (selectedPhotoFile ? selectedPhotoFile.name : 'photo.jpg') })
+      headers: { 'Content-Type': file.type || 'image/jpeg' },
+      body: file
     });
     var json = await res.json();
     if (!res.ok || !json.url) throw new Error(json.error || 'Upload failed');
@@ -775,12 +751,11 @@
     };
 
     try {
-      // Optional photo — compress and upload; proceed without it on any failure
+      // Optional photo — upload bytes directly; proceed without it on any failure
       if (selectedPhotoFile) {
         try {
           btn.textContent = 'Uploading photo…';
-          var dataUrl = await compressPhoto(selectedPhotoFile, 400, 0.82);
-          data.photo = await uploadPhoto(dataUrl);
+          data.photo = await uploadPhoto(selectedPhotoFile, data.studentId || data.studid || data.name || 'tgp-photo');
         } catch (_) {
           // Photo upload is optional — don't block submission
         }

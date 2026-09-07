@@ -13,13 +13,19 @@ function sanitizeName(value) {
     .slice(0, 120) || "student";
 }
 
+async function readRawBody(req) {
+  if (Buffer.isBuffer(req.body)) return req.body;
+  if (typeof req.body === 'string') return Buffer.from(req.body, 'binary');
+
+  const chunks = [];
+  for await (const chunk of req) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+}
+
 module.exports = async function handler(req, res) {
-  // This endpoint is called by the browser with POST + JSON.
   if (req.method === "OPTIONS") {
-    // Was "*", which advertised this upload endpoint to every site on the
-    // web. Every real caller — the app shell and the application form — is
-    // served from this same deployment, so echo the origin only when it is
-    // one of ours.
     const origin = String((req.headers && req.headers.origin) || "");
     if (origin && allowedOrigins(req).has(origin)) {
       res.setHeader("Access-Control-Allow-Origin", origin);
@@ -31,84 +37,39 @@ module.exports = async function handler(req, res) {
   }
 
   if (req.method !== "POST") {
-    return send(res, 405, {
-      success: false,
-      error: "Method Not Allowed. Use POST."
-    });
+    return send(res, 405, { success: false, error: "Method Not Allowed. Use POST." });
   }
 
-  // Writes into the school's Blob store, so it needs the same caller check
-  // as the mail endpoints.
   if (rejected(req, res, { name: "upload" })) return;
 
   try {
     if (!process.env.BLOB_READ_WRITE_TOKEN) {
-      return send(res, 500, {
-        success: false,
-        error: "BLOB_READ_WRITE_TOKEN is not configured in Vercel."
-      });
+      return send(res, 500, { success: false, error: "BLOB_READ_WRITE_TOKEN is not configured in Vercel." });
     }
 
-    const body =
-      typeof req.body === "string"
-        ? JSON.parse(req.body)
-        : (req.body || {});
-
-    const studentId = String(body.studentId || "").trim();
-    const dataUrl = String(body.imageData || body.image || body.dataUrl || "").trim();
+    const studentId = String((req.query && req.query.studentId) || "").trim();
+    const mimeType = String((req.headers && req.headers['content-type']) || '').split(';')[0].trim().toLowerCase();
+    const allowed = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
     if (!studentId) {
-      return send(res, 400, {
-        success: false,
-        error: "Student ID is required."
-      });
+      return send(res, 400, { success: false, error: "Student ID is required." });
+    }
+    if (!allowed.has(mimeType)) {
+      return send(res, 400, { success: false, error: "Only JPG, PNG, and WebP images are accepted." });
     }
 
-    if (!dataUrl.startsWith("data:image/")) {
-      return send(res, 400, {
-        success: false,
-        error: "Invalid image data."
-      });
-    }
-
-    const match = dataUrl.match(
-      /^data:(image\/(?:jpeg|jpg|png));base64,([A-Za-z0-9+/=\s]+)$/
-    );
-
-    if (!match) {
-      return send(res, 400, {
-        success: false,
-        error: "Only JPG/JPEG/PNG images are accepted."
-      });
-    }
-
-    const mimeType = match[1] === "image/jpg" ? "image/jpeg" : match[1];
-    const base64 = match[2].replace(/\s/g, "");
-    const buffer = Buffer.from(base64, "base64");
-
-    // Keep the request comfortably below Vercel/serverless body limits.
+    const buffer = await readRawBody(req);
     const MAX_BYTES = 4 * 1024 * 1024;
     if (!buffer.length) {
-      return send(res, 400, {
-        success: false,
-        error: "The uploaded image is empty."
-      });
+      return send(res, 400, { success: false, error: "The uploaded image is empty." });
     }
-
     if (buffer.length > MAX_BYTES) {
-      return send(res, 413, {
-        success: false,
-        error: "Image is too large. Please upload an image under 4 MB."
-      });
+      return send(res, 413, { success: false, error: "Image is too large. Please upload an image under 4 MB." });
     }
 
-    const extension = mimeType === "image/png" ? "png" : "jpg";
+    const extension = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
     const safeId = sanitizeName(studentId);
-
-    // Store photos in a predictable folder. A timestamp prevents accidental
-    // overwriting when a student submits again.
-    const pathname =
-      `student-photos/${safeId}-${Date.now()}.${extension}`;
+    const pathname = `student-photos/${safeId}-${Date.now()}.${extension}`;
 
     const blob = await put(pathname, buffer, {
       access: "public",
@@ -126,13 +87,6 @@ module.exports = async function handler(req, res) {
     });
   } catch (error) {
     console.error("upload-photo error:", error);
-
-    return send(res, 500, {
-      success: false,
-      error:
-        error && error.message
-          ? error.message
-          : "Photo upload failed."
-    });
+    return send(res, 500, { success: false, error: error && error.message ? error.message : "Photo upload failed." });
   }
 };

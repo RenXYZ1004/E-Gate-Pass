@@ -1,4 +1,4 @@
-import { resolvePhotoUrl, hasPhoto, generatePaginationHTML, bindPaginationEvents, generateQRToken, waitForImages } from '../../utils.js';
+import { resolvePhotoUrl, hasPhoto, generatePaginationHTML, bindPaginationEvents, generateQRToken, waitForImages, compressImageToBlob, uploadPhotoLocally } from '../../utils.js';
 import Dialog from '../../services/Dialog.js';
 import { setButtonLoading } from '../../views/AppView.js';
 
@@ -118,26 +118,14 @@ export default class TGPController {
         setButtonLoading(btnSubmit, true);
 
         try {
-          // Optional photo: compress to base64 and store directly (works on XAMPP and Vercel)
+          // Optional photo: upload image bytes to Blob and store only its URL.
           if (tgpPhotoFile) {
             try {
-              newTGP.photo = await new Promise(resolve => {
-                const img = new Image();
-                const r = new FileReader();
-                r.onload = ev => {
-                  img.onload = () => {
-                    const scale = Math.min(1, 200 / Math.max(img.width, img.height));
-                    const c = document.createElement('canvas');
-                    c.width = Math.round(img.width * scale);
-                    c.height = Math.round(img.height * scale);
-                    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-                    resolve(c.toDataURL('image/jpeg', 0.75));
-                  };
-                  img.src = ev.target.result;
-                };
-                r.readAsDataURL(tgpPhotoFile);
-              });
-            } catch (_) { /* Photo is optional — never blocks submit */ }
+              const imageBlob = await compressImageToBlob(tgpPhotoFile, 500, 500, 0.82);
+              newTGP.photo = await uploadPhotoLocally(newTGP.id || studentId || newTGP.name || 'tgp-photo', imageBlob);
+            } catch (err) {
+              console.warn('Optional TGP photo upload failed:', err);
+            }
           }
 
           await controller.model.addTGP(newTGP);

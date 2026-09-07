@@ -145,7 +145,7 @@ export default class AppModel {
       PreferredGate: s.preferredGate || '',
       VehicleDetails: s.vehicleDetails || '',
       Address: s.address || '',
-      // Only include the photo if it exists. We'll strip it later if it's too large to prevent network crashes.
+      // Photo is always a persistent URL after upload.
       Photo: s.photo || '',
       Status: s.status || 'active',
       FaceDescriptor: s.faceDescriptor || '',
@@ -283,8 +283,8 @@ export default class AppModel {
   // ════════════════════════════════════════════════════════════
 
   async addStudent(student) {
-    // Intercept Base64 photos and save them locally to prevent Google Sheets bloat
-    if (student.photo && student.photo.startsWith('data:image')) {
+    // Upload image bytes first. Only the returned Blob URL is cached and sent to Sheets.
+    if (student.photo instanceof Blob) {
       const filenameBase = student.pgp || student.studid || student.id;
       student.photo = await uploadPhotoLocally(filenameBase, student.photo);
     }
@@ -344,9 +344,10 @@ export default class AppModel {
     const idx = this.students.findIndex(s => s.id === updatedStudent.id);
     if (idx === -1) return;
 
-    // Intercept Base64 photos and save them locally
-    if (updatedStudent.photo && updatedStudent.photo.startsWith('data:image')) {
-      const filenameBase = updatedStudent.pgp || updatedStudent.studid || updatedStudent.id;
+    // Upload image bytes first. Only the returned Blob URL is cached and sent to Sheets.
+    if (updatedStudent.photo instanceof Blob) {
+      const current = this.students[idx];
+      const filenameBase = updatedStudent.pgp || current.pgp || updatedStudent.studid || current.studid || updatedStudent.id;
       updatedStudent.photo = await uploadPhotoLocally(filenameBase, updatedStudent.photo);
     }
 
@@ -357,13 +358,6 @@ export default class AppModel {
     // Write full row to Sheet
     const sheetData = this.mapStudentToSheet(this.students[idx]);
 
-    // CRITICAL FIX: If the Photo is a massive legacy Base64 string (>50KB), 
-    // DO NOT send it in this payload. Apps Script will keep the existing photo 
-    // if the key is undefined. This prevents the "Failed to fetch" error!
-    if (sheetData.Photo && sheetData.Photo.length > 50000) {
-      console.warn(`[AppModel] Stripping massive legacy photo from payload to prevent network crash.`);
-      delete sheetData.Photo;
-    }
 
     try {
       await SheetsService.updateStudent(sheetData);

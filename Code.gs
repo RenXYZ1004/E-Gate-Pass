@@ -14,10 +14,8 @@
 // ────────────────────────────────────────────────────────────────
 // WHAT CHANGED FROM THE PREVIOUS VERSION
 // ────────────────────────────────────────────────────────────────
-// 1. PHOTOS NOW SAVE.  The browser uploads the photo to Vercel Blob and sends
-//    { url, fileName, mimeType }. The old code only looked at .base64, so the
-//    condition was never true and the Photo column was written empty every
-//    time. It now takes .url first and keeps the Drive path as a fallback.
+// 1. PHOTOS NOW SAVE. The browser uploads image bytes to Vercel Blob first,
+//    then this backend writes only the returned public URL to the Photo column.
 //
 // 2. DUPLICATE APPLICATIONS ARE REJECTED.  submitApplication used to append
 //    unconditionally, which is why one Student ID ended up on four rows. It now
@@ -45,8 +43,6 @@
 // 8. cleanupBadPhotoCells() added — clears Photo cells left holding an error
 //    message by an older version of this script.
 // ════════════════════════════════════════════════════════════════
-
-var PHOTO_FOLDER_ID = '1lGruwDr_nhouwRhZUf0qzvGedcbB_4GZ';
 
 // Columns that hold phone numbers. Sheets stores these as numbers when they
 // look numeric, which silently eats the leading zero.
@@ -149,19 +145,6 @@ function handleRequest(e) {
         result = submitApplication(readBody_(e));
         break;
 
-      // ── PHOTO UPLOAD to Drive ──
-      // Legacy: the site now uploads to Vercel Blob at /api/upload-photo.
-      // Kept so older clients do not break.
-      case 'uploadPhoto':
-        var upData = readBody_(e);
-        var upUrl = '';
-        if (upData.base64 && upData.studentId) {
-          var upExt = (upData.mimeType || 'image/jpeg').split('/')[1] || 'jpg';
-          if (upExt === 'jpeg') upExt = 'jpg';
-          var upFile = upData.fileName || (upData.studentId + '.' + upExt);
-          upUrl = savePhotoToDrive_(upData.studentId, upData.base64, upData.mimeType || 'image/jpeg', upFile);
-        }
-        return sendJSON({ success: !!upUrl, url: upUrl });
 
       default:
         // An unknown action is a failure, not a successful response that
@@ -415,25 +398,11 @@ function submitApplication(data) {
       .trim().replace(/^,\s*/, '');
 
     // ── Photo ────────────────────────────────────────────────
-    // The browser uploads to Vercel Blob and sends back a URL. The base64
-    // branch is only for older clients that still post the raw image.
-    var photoUrl = '';
-    if (data.studentPhoto) {
-      if (data.studentPhoto.url) {
-        photoUrl = String(data.studentPhoto.url);
-      } else if (data.studentPhoto.base64) {
-        var ph = data.studentPhoto;
-        var phExt = (ph.mimeType || 'image/jpeg').split('/')[1] || 'jpg';
-        if (phExt === 'jpeg') phExt = 'jpg';
-        var phFile = ph.fileName || ((data.studid || 'photo') + '.' + phExt);
-        photoUrl = savePhotoToDrive_(
-          data.studid || data.name || 'photo',
-          ph.base64,
-          ph.mimeType || 'image/jpeg',
-          phFile
-        );
-      }
-    }
+    // The browser uploads the file bytes to Vercel Blob first. Sheets only
+    // receives and stores the resulting public URL.
+    var photoUrl = data.studentPhoto && data.studentPhoto.url
+      ? String(data.studentPhoto.url).trim()
+      : '';
 
     var valueMap = {
       'PassID':         passId,
@@ -499,33 +468,6 @@ function findLiveRecord_(sheet, headers, studentId) {
     }
   }
   return null;
-}
-
-/**
- * Save a base64 image to the Drive photo folder and return a shareable link.
- * Only used by the legacy base64 path; the site uploads to Vercel Blob now.
- * Never returns an error string — a failure must not be written into the sheet
- * as if it were a photo.
- */
-function savePhotoToDrive_(studentId, base64, mimeType, fileName) {
-  try {
-    var folder = DriveApp.getFolderById(PHOTO_FOLDER_ID);
-
-    var existing = folder.getFilesByName(fileName);
-    while (existing.hasNext()) existing.next().setTrashed(true);
-
-    var blob = Utilities.newBlob(
-      Utilities.base64Decode(base64),
-      mimeType || 'image/jpeg',
-      fileName
-    );
-    var file = folder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    return 'https://drive.google.com/uc?id=' + file.getId() + '&export=view';
-  } catch (e) {
-    Logger.log('savePhotoToDrive_ error: ' + e.message);
-    return '';
-  }
 }
 
 /**

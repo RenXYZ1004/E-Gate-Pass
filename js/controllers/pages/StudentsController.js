@@ -1,4 +1,4 @@
-import { escapeHTML, compressImage, resolvePhotoUrl, hasPhoto, generatePGP, CURRENT_SCHOOL_YEAR, debounce, generateQRToken, uploadPhotoLocally, generatePaginationHTML, bindPaginationEvents, renderVirtualIdCard, renderVirtualIdCardQR, waitForImages } from '../../utils.js';
+import { escapeHTML, compressImageToBlob, resolvePhotoUrl, hasPhoto, generatePGP, CURRENT_SCHOOL_YEAR, debounce, generateQRToken, uploadPhotoLocally, generatePaginationHTML, bindPaginationEvents, renderVirtualIdCard, renderVirtualIdCardQR, waitForImages } from '../../utils.js';
 import Dialog from '../../services/Dialog.js';
 import Icons from '../../icons.js';
 import { setButtonLoading } from '../../views/AppView.js';
@@ -146,9 +146,9 @@ export default class StudentsController {
         const file = e.target.files[0];
         if (file) {
           try {
-            const compressedDataUrl = await compressImage(file, 250, 250, 0.7);
-            document.getElementById('w-photo-preview').innerHTML = `<img src="${compressedDataUrl}" style="width:100%;height:100%;object-fit:cover;">`;
-            controller.tempPhotoData = compressedDataUrl;
+            const previewUrl = URL.createObjectURL(file);
+            document.getElementById('w-photo-preview').innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+            controller.tempPhotoData = await compressImageToBlob(file, 500, 500, 0.82);
           } catch (err) {
             console.error('Failed to compress image:', err);
             controller.view.showToast('Failed to process image.', 'error');
@@ -165,9 +165,9 @@ export default class StudentsController {
         const file = e.target.files[0];
         if (file) {
           try {
-            const compressedDataUrl = await compressImage(file, 250, 250, 0.7);
-            document.getElementById('edit-photo-preview').innerHTML = `<img src="${compressedDataUrl}" style="width:100%;height:100%;object-fit:cover;">`;
-            controller.editPhotoData = compressedDataUrl;
+            const previewUrl = URL.createObjectURL(file);
+            document.getElementById('edit-photo-preview').innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+            controller.editPhotoData = await compressImageToBlob(file, 500, 500, 0.82);
           } catch (err) {
             console.error('Failed to compress image:', err);
             controller.view.showToast('Failed to process image.', 'error');
@@ -859,8 +859,8 @@ export default class StudentsController {
           try {
             // Needs compressImage which is globally accessible if imported, wait compressImage is in utils.js!
             // Wait, we can assume compressImage and uploadPhotoLocally are available because this file uses them.
-            const b64 = await compressImage(file, 250, 250, 0.7);
-            const savedPath = await uploadPhotoLocally(student.pgp, b64);
+            const imageBlob = await compressImageToBlob(file, 500, 500, 0.82);
+            const savedPath = await uploadPhotoLocally(student.pgp || student.id, imageBlob);
             
             if (savedPath) {
               student.photo = savedPath;
