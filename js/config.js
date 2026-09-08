@@ -6,7 +6,7 @@
 
 // Google Apps Script Web App endpoint (Sheets backend).
 export const SHEETS_API_URL =
-  'https://script.google.com/macros/s/AKfycbymwAiAEUCPYJMJbC_IRQjz1IsFf6UsOGFej15GQ46hqMV4xMhhPnepTMDlrj0g89Am/exec';
+  'https://script.google.com/macros/s/AKfycbxFMnMHIeaRDk2pQ-qi9QJFedCS_YGkXnUhg5bjbAYubTRnVsCGW0plkOeuv1NjRO5m6g/exec';
 
 // The one and only login page. Everything that needs a login sends the
 // user here — there is no second, in-app login form.
