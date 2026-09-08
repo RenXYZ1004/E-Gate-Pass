@@ -47,7 +47,7 @@ Built for **SISC**.
 | **Offline Engine** | Service Worker (`sw.js`) & CacheStorage API |
 | **QR Generation** | [qrcodejs](https://github.com/davidshimjs/qrcodejs) |
 | **QR Scanning** | [jsQR](https://github.com/cozmo/jsQR) (Localized for offline use) |
-| **Email Service**| [EmailJS](https://www.emailjs.com/) |
+
 
 ---
 
