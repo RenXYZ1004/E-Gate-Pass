@@ -27,6 +27,45 @@ function readCache(key, fallback) {
   }
 }
 
+// Write a JSON value to localStorage without ever throwing.
+//
+// The students array outgrew the 5 MB origin quota: most records still carry
+// their photo inline as a base64 data URI, and localStorage counts UTF-16, so
+// the array measures ~8.4 MB. setItem then threw QuotaExceededError on every
+// single sync — and because the cache write runs inside syncFromSheet's try
+// block, that throw was caught there as a *sync failure*, so the freshly
+// fetched students were never rendered and the app kept showing whatever stale
+// cache predated the overflow. A cache miss must degrade to "not cached", not
+// take the sync down with it.
+function writeCache(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (err) {
+    console.warn(`[AppModel] Could not cache "${key}" — ${err.name}. Continuing without it.`, err);
+    return false;
+  }
+}
+
+// The cached copy of a student drops an inline data-URI photo and keeps a
+// photo that is already a URL (a few dozen characters). Inline photos are ~90%
+// of the payload; without them the array is well under quota. Nothing is lost
+// on screen — this.students keeps every photo in memory for the session, and
+// the next sync refetches them.
+//
+// The key is deleted, not blanked. JSON.stringify omits undefined, so such a
+// record reloads with photo === undefined, which mapStudentToSheet passes
+// through as an absent Photo column — and Apps Script's updateRow keeps the
+// cell it already has. Caching '' instead would mean that editing a student
+// before the first sync completed wrote that '' back and destroyed the photo.
+function withoutInlinePhotos(students) {
+  return students.map(s => {
+    if (typeof s.photo !== 'string' || !s.photo.startsWith('data:')) return s;
+    const { photo, ...rest } = s;
+    return rest;
+  });
+}
+
 export default class AppModel {
   constructor() {
     // Load cached data from localStorage (instant load)
@@ -145,8 +184,11 @@ export default class AppModel {
       PreferredGate: s.preferredGate || '',
       VehicleDetails: s.vehicleDetails || '',
       Address: s.address || '',
-      // Photo is always a persistent URL after upload.
-      Photo: s.photo || '',
+      // Photo is a persistent URL after upload. undefined means the value was
+      // dropped from the localStorage cache to fit the quota, not that the
+      // student has no photo — leaving the key out makes Apps Script's
+      // updateRow keep whatever the cell already holds rather than blanking it.
+      Photo: s.photo === undefined ? undefined : (s.photo || ''),
       Status: s.status || 'active',
       FaceDescriptor: s.faceDescriptor || '',
       QRToken: s.qrToken || '',
@@ -178,11 +220,11 @@ export default class AppModel {
 
   // ── Cache all data to localStorage ────────────────────────
   cacheAll() {
-    localStorage.setItem('pgp_students', JSON.stringify(this.students));
-    localStorage.setItem('pgp_logs', JSON.stringify(this.exitLogs));
-    localStorage.setItem('pgp_tgp', JSON.stringify(this.tgp));
-    localStorage.setItem('pgp_users', JSON.stringify(this.users));
-    localStorage.setItem('pgp_gates', JSON.stringify(this.gates));
+    writeCache('pgp_students', withoutInlinePhotos(this.students));
+    writeCache('pgp_logs', this.exitLogs);
+    writeCache('pgp_tgp', this.tgp);
+    writeCache('pgp_users', this.users);
+    writeCache('pgp_gates', this.gates);
   }
 
   // ── Gate Field Mapping ────────────────────────────────────
@@ -237,7 +279,7 @@ export default class AppModel {
 
   async queueWrite(action, data) {
     this.writeQueue.push({ action, data, timestamp: Date.now() });
-    localStorage.setItem('pgp_write_queue', JSON.stringify(this.writeQueue));
+    writeCache('pgp_write_queue', this.writeQueue);
   }
 
   async processWriteQueue() {
@@ -275,7 +317,7 @@ export default class AppModel {
       }
     }
     this.writeQueue = remaining;
-    localStorage.setItem('pgp_write_queue', JSON.stringify(this.writeQueue));
+    writeCache('pgp_write_queue', this.writeQueue);
   }
 
   // ════════════════════════════════════════════════════════════
@@ -291,7 +333,7 @@ export default class AppModel {
 
     // Add to local cache immediately
     this.students.push(student);
-    localStorage.setItem('pgp_students', JSON.stringify(this.students));
+    writeCache('pgp_students', withoutInlinePhotos(this.students));
 
     // Write to Sheet
     const sheetData = this.mapStudentToSheet(student);
@@ -305,7 +347,7 @@ export default class AppModel {
 
   async removeStudent(id) {
     this.students = this.students.filter(s => s.id !== id);
-    localStorage.setItem('pgp_students', JSON.stringify(this.students));
+    writeCache('pgp_students', withoutInlinePhotos(this.students));
 
     try {
       await SheetsService.removeStudent(id);
@@ -327,7 +369,7 @@ export default class AppModel {
     const student = this.students.find(s => s.id === id || s.pgp === id);
     if (student) {
       student.status = status;
-      localStorage.setItem('pgp_students', JSON.stringify(this.students));
+      writeCache('pgp_students', withoutInlinePhotos(this.students));
 
       // Always send the pgp value (= PassID in Sheet) for reliable backend lookup
       const sheetId = student.pgp || student.id;
@@ -353,7 +395,7 @@ export default class AppModel {
 
     // Merge updates into local cache
     this.students[idx] = { ...this.students[idx], ...updatedStudent };
-    localStorage.setItem('pgp_students', JSON.stringify(this.students));
+    writeCache('pgp_students', withoutInlinePhotos(this.students));
 
     // Write full row to Sheet
     const sheetData = this.mapStudentToSheet(this.students[idx]);
@@ -377,7 +419,7 @@ export default class AppModel {
 
   async addExitLog(logEntry) {
     this.exitLogs.unshift(logEntry);
-    localStorage.setItem('pgp_logs', JSON.stringify(this.exitLogs));
+    writeCache('pgp_logs', this.exitLogs);
 
     try {
       await SheetsService.addLog(logEntry);
@@ -389,7 +431,7 @@ export default class AppModel {
 
   async clearLogs() {
     this.exitLogs = [];
-    localStorage.setItem('pgp_logs', JSON.stringify(this.exitLogs));
+    writeCache('pgp_logs', this.exitLogs);
   }
 
   // ════════════════════════════════════════════════════════════
@@ -398,12 +440,12 @@ export default class AppModel {
 
   async addEmailToQueue(emailParams) {
     this.emailQueue.push(emailParams);
-    localStorage.setItem('pgp_email_queue', JSON.stringify(this.emailQueue));
+    writeCache('pgp_email_queue', this.emailQueue);
   }
 
   async removeEmailFromQueue(index) {
     this.emailQueue.splice(index, 1);
-    localStorage.setItem('pgp_email_queue', JSON.stringify(this.emailQueue));
+    writeCache('pgp_email_queue', this.emailQueue);
   }
 
   // ════════════════════════════════════════════════════════════
@@ -412,7 +454,7 @@ export default class AppModel {
 
   async addTGP(tgpEntry) {
     this.tgp.unshift(tgpEntry);
-    localStorage.setItem('pgp_tgp', JSON.stringify(this.tgp));
+    writeCache('pgp_tgp', this.tgp);
 
     try {
       await SheetsService.addTGP(tgpEntry);
@@ -426,7 +468,7 @@ export default class AppModel {
     const pass = this.tgp.find(t => t.id === id);
     if (pass) {
       pass.status = status;
-      localStorage.setItem('pgp_tgp', JSON.stringify(this.tgp));
+      writeCache('pgp_tgp', this.tgp);
 
       try {
         await SheetsService.updateTGPStatus(id, status);
@@ -447,20 +489,20 @@ export default class AppModel {
 
   async addGate(gate) {
     this.gates.push(gate);
-    localStorage.setItem('pgp_gates', JSON.stringify(this.gates));
+    writeCache('pgp_gates', this.gates);
     await SheetsService.addGate(this.mapGateToSheet(gate));
   }
 
   async updateGate(gate) {
     const idx = this.gates.findIndex(g => g.id === gate.id);
     if (idx !== -1) this.gates[idx] = gate;
-    localStorage.setItem('pgp_gates', JSON.stringify(this.gates));
+    writeCache('pgp_gates', this.gates);
     await SheetsService.updateGate(this.mapGateToSheet(gate));
   }
 
   async removeGate(id) {
     this.gates = this.gates.filter(g => g.id !== id);
-    localStorage.setItem('pgp_gates', JSON.stringify(this.gates));
+    writeCache('pgp_gates', this.gates);
     await SheetsService.removeGate(id);
   }
 
@@ -472,7 +514,7 @@ export default class AppModel {
     // Try to fetch fresh users from sheet first
     try {
       this.users = await SheetsService.getUsers();
-      localStorage.setItem('pgp_users', JSON.stringify(this.users));
+      writeCache('pgp_users', this.users);
     } catch (err) {
       console.warn('Could not fetch users from Sheet, using cached data');
       // users already loaded from localStorage cache
