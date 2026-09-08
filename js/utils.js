@@ -98,8 +98,33 @@ export function resolvePhotoUrl(photoValue) {
   const trimmed = String(photoValue || '').trim();
   if (!trimmed) return '';
 
-  // A full URL (Vercel Blob, Drive, Cloudinary, etc.) — use as-is
+  // An inline data URI. Photos captured before the Vercel Blob migration were
+  // canvas-encoded to WebP and written straight into the Photo column, so the
+  // records already in Sheets are still data URIs. Dropping this branch — as
+  // the Blob migration did — did not merely skip an old format: it blanked the
+  // photo of every student enrolled before the switch, on the dashboard, the
+  // students grid, the scanner result, the PGP/TGP rows and the ID card, while
+  // the newer Blob-hosted photos kept working. Both shapes are valid <img>
+  // sources and both have to render.
+  //
+  // Matched strictly — image subtype, then a comma, then a non-empty payload —
+  // so a truncated cell cannot put a bare "data:" into an <img src>.
+  if (/^data:image\/[\w.+-]+(?:;[^,]*)?,.+$/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  // A full URL (Vercel Blob, Drive, Cloudinary, etc.).
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    // Drive share links are the one shape that cannot go into an <img> as
+    // written. Google stopped serving raw bytes from /uc?export=view — it
+    // answers an HTML interstitial and wants the viewer's cookies — so a photo
+    // saved by the Apps Script Drive path opens fine in a browser tab and is a
+    // broken image on the dashboard. Rewrite any Drive link to the lh3 host,
+    // which returns the image itself and sets permissive CORS.
+    const driveId = trimmed.match(/^https?:\/\/(?:drive|docs)\.google\.com\/(?:file\/d\/|uc\?(?:[^#]*&)?id=|open\?(?:[^#]*&)?id=)([\w-]{10,})/i)
+      || trimmed.match(/^https?:\/\/drive\.usercontent\.google\.com\/(?:download|uc)\?(?:[^#]*&)?id=([\w-]{10,})/i);
+    if (driveId) return 'https://lh3.googleusercontent.com/d/' + driveId[1];
+
     return trimmed;
   }
 
@@ -275,11 +300,11 @@ export function renderVirtualIdCard(student, options = {}) {
           <div style="flex:1;min-width:0;">
             <div style="font-size:${nameFit.size}px;font-weight:800;color:#1a1a2e;line-height:1.15;margin-bottom:4px;${clampBox(nameFit.size, 1.15, nameFit.maxLines)}">${escapeHTML(name)}</div>
             <div style="font-size:10px;color:#6b7280;font-weight:600;margin-bottom:4px;">ID: <span style="color:#422467;font-weight:800;font-size:12px;">${escapeHTML(s.studid || s.id || '—')}</span></div>
-            ${gradeLine ? `<div style="display:inline-block;background:rgba(66,36,103,0.08);color:#422467;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:800;">${escapeHTML(gradeLine)}</div>` : ''}
+            ${gradeLine ? `<div style="display:inline-block;background:#42246714;color:#422467;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:800;">${escapeHTML(gradeLine)}</div>` : ''}
           </div>
         </div>
 
-        <div style="background:linear-gradient(90deg,#FDE047 0%,#fef08a 100%);border-radius:8px;padding:10px;text-align:center;margin-bottom:10px;border:1px solid rgba(234,179,8,0.5);">
+        <div style="background:linear-gradient(90deg,#3EEB26 0%,#3EEB26 100%);border-radius:8px;padding:10px;text-align:center;margin-bottom:10px;border:1px solid rgba(234,179,8,0.5);">
           <div style="font-size:${arrFit.size}px;font-weight:800;color:#854d0e;line-height:1.25;${clampBox(arrFit.size, 1.25, arrFit.maxLines)}">${escapeHTML(arrangementText)}</div>
         </div>
 

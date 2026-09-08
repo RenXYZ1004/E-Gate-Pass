@@ -253,7 +253,7 @@ export default class DashboardView {
         <div class="dash-activity-row${isDenied ? ' dash-activity-denied' : ''}">
           <div class="dash-activity-avatar${isDenied ? ' denied' : ''}">
             ${student && hasPhoto(student.photo)
-              ? `<img src="${resolvePhotoUrl(student.photo)}" alt="${sName}">`
+              ? `<img src="${escapeHTML(resolvePhotoUrl(student.photo))}" alt="${sName}">`
               : initials}
           </div>
           <div class="dash-activity-info">

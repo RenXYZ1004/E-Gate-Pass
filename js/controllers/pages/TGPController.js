@@ -264,7 +264,7 @@ export default class TGPController {
         const photoHtml = (student && hasPhoto(student.photo))
           ? `<img src="${resolvePhotoUrl(student.photo)}" style="width:100%;height:100%;object-fit:cover;">`
           : hasPhoto(tgp.photo)
-          ? `<img src="${tgp.photo}" style="width:100%;height:100%;object-fit:cover;">`
+          ? `<img src="${resolvePhotoUrl(tgp.photo)}" style="width:100%;height:100%;object-fit:cover;">`
           : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;color:#e08700;">${sName.substring(0,2).toUpperCase()}</div>`;
 
         const target = document.getElementById('tgp-card-render-target');

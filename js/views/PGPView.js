@@ -35,7 +35,7 @@ export default class PGPView {
       <div class="card">
         <div class="card-head">
           <div>
-            <div class="card-title">Permanent Gate Passes (PGP)</div>
+            <div class="card-title">cPermanent Gate Passes (PGP)</div>
             <div class="card-sub">Manage active, suspended, and revoked long-term passes</div>
           </div>
         </div>
