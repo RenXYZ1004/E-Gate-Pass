@@ -255,12 +255,16 @@ export function renderVirtualIdCard(student, options = {}) {
   // A long arrangement eats vertical room; shrink the QR panel to pay for it
   // so the Pass ID under the code is never clipped.
   const compact = arrangementText.length > 110;
-  const qrBox = compact ? 84 : 100;
-  const qrPad = compact ? 10 : 12;
+  // The quiet zone now lives inside the QR raster rather than being faked by
+  // the tile's padding. The tile grew to pay for it, so the code itself still
+  // measures ~88px across — the size it was before — with 12px of true silent
+  // margin around it instead of 6px of ordinary padding.
+  const qrBox = compact ? 100 : 116;
+  const qrPad = compact ? 9 : 11;
 
   const photoInner = hasPhoto(s.photo)
-    ? `<img src="${escapeHTML(resolvePhotoUrl(s.photo))}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">`
-    : `<div style="width:100%;height:100%;border-radius:10px;background:#f0ebf7;color:#422467;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;letter-spacing:1px;">${escapeHTML(name.replace(/[^A-Za-z]/g, '').substring(0, 2).toUpperCase() || '--')}</div>`;
+    ? `<img src="${escapeHTML(resolvePhotoUrl(s.photo))}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:9px;">`
+    : `<div style="width:100%;height:100%;border-radius:9px;background:#f0ebf7;color:#422467;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;letter-spacing:1px;">${escapeHTML(name.replace(/[^A-Za-z]/g, '').substring(0, 2).toUpperCase() || '--')}</div>`;
 
   const cardStyle = [
     'width:315px',
@@ -280,47 +284,47 @@ export function renderVirtualIdCard(student, options = {}) {
   return `
     <div id="${escapeHTML(captureId)}" data-name="${escapeHTML(name)}" style="${cardStyle};">
 
-      <div style="background:linear-gradient(135deg,#422467 0%,#291244 100%);padding:18px 16px 24px;color:#fff;display:flex;align-items:center;gap:12px;position:relative;flex-shrink:0;">
+      <div style="background:linear-gradient(135deg,#422467 0%,#291244 100%);padding:17px 16px 22px;color:#fff;display:flex;align-items:center;gap:11px;position:relative;flex-shrink:0;">
         <div style="width:40px;height:40px;background:#ffffff;border-radius:10px;padding:4px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 8px rgba(0,0,0,0.2);flex-shrink:0;box-sizing:border-box;">
           <img src="SISC_logo.png" alt="SISC" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
         </div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:13px;font-weight:900;letter-spacing:0.2px;line-height:1.1;text-transform:uppercase;">Southville International</div>
-          <div style="font-size:8.5px;font-weight:500;color:rgba(255,255,255,0.8);margin-top:4px;line-height:1.2;">1281 Tropical Ave Cor. Luxembourg St.<br>BF International, Las Pi&ntilde;as City</div>
+          <div style="font-size:8.5px;font-weight:500;color:rgba(255,255,255,0.8);margin-top:3px;line-height:1.35;letter-spacing:0.1px;">1281 Tropical Ave Cor. Luxembourg St.<br>BF International, Las Pi&ntilde;as City</div>
         </div>
         <div style="position:absolute;bottom:-1px;left:0;right:0;height:20px;background:#ffffff;border-radius:20px 20px 0 0;"></div>
       </div>
 
       <div style="padding:0 16px;background:#ffffff;flex:1;display:flex;flex-direction:column;position:relative;z-index:1;min-height:0;overflow:hidden;">
 
-        <div style="text-align:center;font-size:10px;color:#00c9b1;font-weight:900;text-transform:uppercase;letter-spacing:2.5px;margin-bottom:11px;">Permanent Gate Pass</div>
+        <div style="text-align:center;font-size:10px;color:#00c9b1;font-weight:900;text-transform:uppercase;letter-spacing:2.5px;line-height:1.2;margin-bottom:10px;">Permanent Gate Pass</div>
 
-        <div style="display:flex;gap:14px;align-items:center;margin-bottom:11px;">
+        <div style="display:flex;gap:13px;align-items:center;margin-bottom:10px;">
           <div style="width:76px;height:76px;border-radius:14px;border:3px solid #00c9b1;padding:2px;background:#fff;box-shadow:0 6px 12px rgba(0,201,177,0.2);flex-shrink:0;box-sizing:border-box;">${photoInner}</div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:${nameFit.size}px;font-weight:800;color:#1a1a2e;line-height:1.15;margin-bottom:4px;${clampBox(nameFit.size, 1.15, nameFit.maxLines)}">${escapeHTML(name)}</div>
-            <div style="font-size:10px;color:#6b7280;font-weight:600;margin-bottom:4px;">ID: <span style="color:#422467;font-weight:800;font-size:12px;">${escapeHTML(s.studid || s.id || '—')}</span></div>
-            ${gradeLine ? `<div style="display:inline-block;background:#42246714;color:#422467;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:800;">${escapeHTML(gradeLine)}</div>` : ''}
+            <div style="font-size:${nameFit.size}px;font-weight:800;color:#1a1a2e;line-height:1.2;letter-spacing:-0.2px;margin-bottom:5px;${clampBox(nameFit.size, 1.2, nameFit.maxLines)}">${escapeHTML(name)}</div>
+            <div style="font-size:10px;color:#6b7280;font-weight:600;line-height:1.2;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">ID: <span style="color:#422467;font-weight:800;font-size:12px;letter-spacing:0.2px;font-variant-numeric:tabular-nums;">${escapeHTML(s.studid || s.id || '—')}</span></div>
+            ${gradeLine ? `<div style="display:inline-block;max-width:100%;background:#42246714;color:#422467;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:800;line-height:1.35;letter-spacing:0.2px;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHTML(gradeLine)}</div>` : ''}
           </div>
         </div>
 
-        <div style="background:linear-gradient(90deg,#3EEB26 0%,#3EEB26 100%);border-radius:8px;padding:10px;text-align:center;margin-bottom:10px;border:1px solid rgba(234,179,8,0.5);">
-          <div style="font-size:${arrFit.size}px;font-weight:800;color:#854d0e;line-height:1.25;${clampBox(arrFit.size, 1.25, arrFit.maxLines)}">${escapeHTML(arrangementText)}</div>
+        <div style="background:linear-gradient(90deg,#3EEB26 0%,#3EEB26 100%);border-radius:8px;padding:9px 10px;text-align:center;margin-bottom:9px;border:1px solid rgba(234,179,8,0.5);box-sizing:border-box;">
+          <div style="font-size:${arrFit.size}px;font-weight:800;color:#854d0e;line-height:1.3;letter-spacing:0.1px;word-break:break-word;${clampBox(arrFit.size, 1.3, arrFit.maxLines)}">${escapeHTML(arrangementText)}</div>
         </div>
 
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:11px;">
-          <div style="font-size:9px;text-transform:uppercase;color:#64748b;font-weight:800;letter-spacing:0.5px;">Authorized Gate</div>
-          <div style="font-size:12px;font-weight:800;color:#422467;text-align:right;">${escapeHTML(s.preferredGate || 'Any authorized gate')}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:10px;box-sizing:border-box;">
+          <div style="font-size:9px;text-transform:uppercase;color:#64748b;font-weight:800;letter-spacing:0.5px;line-height:1.2;flex-shrink:0;">Authorized Gate</div>
+          <div style="font-size:11.5px;font-weight:800;color:#422467;text-align:right;line-height:1.25;min-width:0;word-break:break-word;">${escapeHTML(s.preferredGate || 'Any authorized gate')}</div>
         </div>
 
-        <div style="background:#f8fafc;border-radius:12px;padding:${qrPad}px;display:flex;flex-direction:column;align-items:center;border:1px dashed #cbd5e1;margin-top:auto;margin-bottom:${compact ? 8 : 12}px;flex-shrink:0;">
-          <div style="font-size:9px;color:#64748b;text-transform:uppercase;font-weight:800;margin-bottom:${compact ? 6 : 8}px;letter-spacing:1px;">Scan to Verify</div>
-          <div id="${escapeHTML(qrId)}" data-qr-size="${qrBox - 12}" style="width:${qrBox}px;height:${qrBox}px;background:#fff;padding:6px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.05);box-sizing:border-box;display:flex;align-items:center;justify-content:center;"></div>
-          <div style="font-size:${compact ? 12 : 13}px;font-weight:900;font-family:'Courier New',Courier,monospace;color:#422467;margin-top:${compact ? 6 : 8}px;letter-spacing:2px;white-space:nowrap;">${escapeHTML(s.pgp || s.id || '—')}</div>
+        <div style="background:#f8fafc;border-radius:12px;padding:${qrPad}px;display:flex;flex-direction:column;align-items:center;border:1px dashed #cbd5e1;margin-top:auto;margin-bottom:${compact ? 8 : 10}px;flex-shrink:0;box-sizing:border-box;">
+          <div style="font-size:9px;color:#64748b;text-transform:uppercase;font-weight:800;line-height:1.2;margin-bottom:${compact ? 6 : 7}px;letter-spacing:1px;">Scan to Verify</div>
+          <div id="${escapeHTML(qrId)}" data-qr-size="${qrBox - 4}" style="width:${qrBox}px;height:${qrBox}px;background:#fff;padding:2px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.05);box-sizing:border-box;display:flex;align-items:center;justify-content:center;"></div>
+          <div style="max-width:100%;font-size:${compact ? 12 : 13}px;font-weight:900;font-family:'Courier New',Courier,monospace;color:#422467;line-height:1.25;margin-top:${compact ? 6 : 7}px;letter-spacing:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHTML(passCardQRPayload(s).split('|')[0] || '—')}</div>
         </div>
       </div>
 
-      <div style="background:#00c9b1;padding:10px;text-align:center;color:#003d35;font-size:9px;font-weight:800;letter-spacing:0.5px;flex-shrink:0;">A.Y. 2026-2027 &bull; VALID UNTIL JULY 2027</div>
+      <div style="background:#00c9b1;padding:9px 10px;text-align:center;color:#003d35;font-size:9px;font-weight:800;letter-spacing:0.6px;line-height:1.2;flex-shrink:0;">A.Y. 2026-2027 &bull; VALID UNTIL JULY 2027</div>
     </div>`;
 }
 
@@ -332,14 +336,111 @@ export function renderVirtualIdCard(student, options = {}) {
  */
 export function passCardQRPayload(student) {
   const s = student || {};
-  return s.qrToken
-    ? `${s.pgp || ''}|${s.qrToken}`
-    : (s.pgp || s.studid || s.id || 'N/A');
+  // The same fallback chain on both branches. The tokened branch used to read
+  // `s.pgp || ''`, so a record whose PassID cell is blank produced "|TOKEN":
+  // the scanner split that into an empty id and answered "Student not found"
+  // for every scan of that card, forever. Fall back the way the bare-id branch
+  // always has, and only then append the token.
+  const id = s.pgp || s.studid || s.id || '';
+  if (!id) return 'N/A';
+  return s.qrToken ? `${id}|${s.qrToken}` : id;
+}
+
+// The spec's minimum silent margin. qrcode.js draws none at all, and the
+// card only offered ~2 modules of white padding around the code.
+const QR_QUIET_ZONE = 4;
+
+// Backing-store resolution for the QR raster. The card shows the code at
+// ~110 CSS px but html2canvas exports it at scale 2-3, and printed cards get
+// read by cheap CCD scanners, so the pixels have to exist up front.
+const QR_RENDER_PX = 960;
+
+/**
+ * Draw `text` as a QR code into `container`, sized to `size` CSS pixels.
+ *
+ * qrcode.js sizes its canvas backing store to the *display* size and fills
+ * each module with a fractional-pixel fillRect. At a pass card's scale that
+ * was 2.5-3.5 px per module with every module edge anti-aliased to grey, and
+ * html2canvas then upscaled that raster 2-3x for the emailed and downloaded
+ * card. It also draws no quiet zone at all, though the spec requires four
+ * modules of silent margin, and callers were passing a tinted colorLight that
+ * narrowed the black/white gap a scanner binarises against.
+ *
+ * So we let the library compute the matrix and rasterise it ourselves: an
+ * integer module size at high resolution, pure black on pure white, with the
+ * quiet zone drawn in. Every module lands on whole pixels, nothing is
+ * anti-aliased, and an export downsamples a crisp source instead of
+ * magnifying a blurred one.
+ *
+ * @param {HTMLElement} container  emptied, then given the code
+ * @param {string} text            the payload to encode
+ * @param {number} size            display size in CSS pixels
+ * @returns {boolean} true if a QR image was drawn
+ */
+export function renderQRCodeInto(container, text, size) {
+  if (!container) return false;
+  container.innerHTML = '';   // re-rendering must not stack QR codes
+
+  if (typeof window === 'undefined' || typeof window.QRCode !== 'function') return false;
+
+  // Build in a detached node: on the fallback path we move the library's own
+  // canvas across, so a half-drawn code is never shown.
+  const scratch = document.createElement('div');
+  const qr = new window.QRCode(scratch, {
+    text,
+    width: size,
+    height: size,
+    colorDark: '#000000',     // pure black on pure white: widest
+    colorLight: '#ffffff',    // binarisation margin a scanner can get
+    correctLevel: window.QRCode.CorrectLevel.H
+  });
+
+  const model = qr && qr._oQRCode;
+  if (model && typeof model.getModuleCount === 'function') {
+    const count = model.getModuleCount();
+    const span = count + QR_QUIET_ZONE * 2;
+    const modulePx = Math.max(1, Math.floor(QR_RENDER_PX / span));
+    const canvasPx = modulePx * span;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasPx;
+    canvas.height = canvasPx;
+    canvas.style.width = `${size}px`;
+    canvas.style.height = `${size}px`;
+    canvas.style.display = 'block';
+
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvasPx, canvasPx);
+    ctx.fillStyle = '#000000';
+    for (let row = 0; row < count; row++) {
+      for (let col = 0; col < count; col++) {
+        if (!model.isDark(row, col)) continue;
+        ctx.fillRect(
+          (col + QR_QUIET_ZONE) * modulePx,
+          (row + QR_QUIET_ZONE) * modulePx,
+          modulePx,
+          modulePx
+        );
+      }
+    }
+
+    container.appendChild(canvas);
+    return true;
+  }
+
+  // Library internals moved: fall back to whatever it drew itself.
+  while (scratch.firstChild) container.appendChild(scratch.firstChild);
+  return true;
 }
 
 /**
  * Draw the QR code into the placeholder produced by renderVirtualIdCard().
  * Safe when the element is gone or the QR library never loaded.
+ *
+ * Codes carrying a QR token are 29x29 modules where tokenless ones are 25x25,
+ * so under the old renderer the tokened cards crossed the readability floor
+ * first — which is why only *some* passes failed at the gate.
  *
  * @param {string} containerId  the id passed as options.qrId
  * @param {Object} student
@@ -349,21 +450,13 @@ export function renderVirtualIdCardQR(containerId, student) {
   const container = document.getElementById(containerId);
   if (!container) return false;
 
-  container.innerHTML = '';   // re-rendering must not stack QR codes
   const qrPayload = passCardQRPayload(student);
 
   if (typeof window !== 'undefined' && typeof window.QRCode === 'function') {
     try {
       // The card tells us how big it can afford; default to the roomy size.
-      const size = parseInt(container.dataset.qrSize, 10) || 88;
-      new window.QRCode(container, {
-        text: qrPayload,
-        width: size,
-        height: size,
-        colorDark: '#1f2937',
-        colorLight: '#ffffff'
-      });
-      return true;
+      const size = parseInt(container.dataset.qrSize, 10) || 112;
+      if (renderQRCodeInto(container, qrPayload, size)) return true;
     } catch (err) {
       console.error('[IdCard] Failed to render QR code:', err);
     }

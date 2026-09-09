@@ -14,6 +14,17 @@ import Icons from '../icons.js';
 import { generatePGP, generateQRToken } from '../utils.js';
 import { loginUrl } from '../config.js';
 
+// ── Camera scanning budget ───────────────────────────────────────
+// jsQR's cost scales with the pixel count it is handed, and the decode runs
+// on the main thread. Reading every camera frame at native resolution meant a
+// full-frame getImageData plus a full decode up to 60 times a second, which
+// saturates a phone's main thread: the preview stutters, frames arrive
+// motion-blurred, and scans that should land on the first present take
+// several tries. A downscaled frame a dozen times a second costs a fraction
+// of that and is no slower to react — a card still has to be held up.
+const SCAN_INTERVAL_MS = 80;    // ~12 decode attempts per second
+const SCAN_MAX_EDGE = 800;      // longest edge handed to jsQR, in pixels
+
 export default class AppController {
   constructor(model, view) {
     this.model = model;
@@ -606,6 +617,8 @@ export default class AppController {
         playPromise.catch(err => console.warn('Video play interrupted:', err.name));
       }
       this.scannerActive = true;
+      this.scanCtx = null;          // canvas is re-sized for the new stream
+      this.lastDecodeAt = 0;
       this.resetCameraIdleTimeout();
       requestAnimationFrame(() => this.tickCamera());
     };
@@ -625,8 +638,16 @@ export default class AppController {
       this.view.showToast(message, "error");
     };
 
-    // Try requested camera first
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: this.currentFacingMode } })
+    // Try requested camera first.
+    // Without a resolution hint a modern phone hands back its largest mode —
+    // 4K on some devices — and every frame of it is copied and decoded below.
+    // 720p resolves a gate pass at arm's length with room to spare.
+    const videoConstraints = {
+      facingMode: this.currentFacingMode,
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
+    };
+    navigator.mediaDevices.getUserMedia({ video: videoConstraints })
       .then(onSuccess)
       .catch(firstErr => {
         console.warn("Rear camera unavailable, trying any camera...", firstErr.name);
@@ -675,13 +696,33 @@ export default class AppController {
     const canvasElement = document.getElementById('scan-canvas');
     if (!video || !canvasElement) return;
 
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      const canvas = canvasElement.getContext("2d", { willReadFrequently: true });
-      canvasElement.height = video.videoHeight;
-      canvasElement.width = video.videoWidth;
-      canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+    // Hold the decode to SCAN_INTERVAL_MS. The rAF loop still runs, so the
+    // camera keeps a frame ready and the browser can throttle us in background.
+    const nowTs = Date.now();
+    const due = nowTs - (this.lastDecodeAt || 0) >= SCAN_INTERVAL_MS;
 
-      const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+    if (due && video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
+      this.lastDecodeAt = nowTs;
+
+      // Fit the frame inside SCAN_MAX_EDGE, never upscaling it.
+      const ratio = Math.min(1, SCAN_MAX_EDGE / Math.max(video.videoWidth, video.videoHeight));
+      const w = Math.max(1, Math.round(video.videoWidth * ratio));
+      const h = Math.max(1, Math.round(video.videoHeight * ratio));
+
+      // Assigning width/height reallocates the backing store and clears it, so
+      // only do it when the size actually changed rather than on every frame.
+      if (canvasElement.width !== w || canvasElement.height !== h) {
+        canvasElement.width = w;
+        canvasElement.height = h;
+        this.scanCtx = null;
+      }
+      if (!this.scanCtx) {
+        this.scanCtx = canvasElement.getContext('2d', { willReadFrequently: true });
+      }
+      const canvas = this.scanCtx;
+      canvas.drawImage(video, 0, 0, w, h);
+
+      const imageData = canvas.getImageData(0, 0, w, h);
 
       if (typeof window.jsQR !== 'function') {
         this.stopCamera();

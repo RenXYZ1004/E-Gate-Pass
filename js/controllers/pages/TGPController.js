@@ -1,4 +1,4 @@
-import { resolvePhotoUrl, hasPhoto, generatePaginationHTML, bindPaginationEvents, generateQRToken, waitForImages, compressImageToBlob, uploadPhotoLocally } from '../../utils.js';
+import { resolvePhotoUrl, hasPhoto, generatePaginationHTML, bindPaginationEvents, generateQRToken, waitForImages, compressImageToBlob, uploadPhotoLocally, renderQRCodeInto } from '../../utils.js';
 import Dialog from '../../services/Dialog.js';
 import { setButtonLoading } from '../../views/AppView.js';
 
@@ -292,7 +292,7 @@ export default class TGPController {
 
               <div style="background:#f5f4f8;border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:center;">
                 <div style="font-size:10px;color:#6b7280;text-transform:uppercase;font-weight:700;margin-bottom:5px;">Scan to Verify</div>
-                <div id="tgp-qrcode"></div>
+                <div id="tgp-qrcode" style="border-radius:6px;overflow:hidden;line-height:0;"></div>
                 <div style="font-size:11px;font-weight:700;font-family:monospace;color:#e08700;margin-top:5px;letter-spacing:1px;">${tgp.id}</div>
               </div>
             </div>
@@ -303,7 +303,12 @@ export default class TGPController {
         setTimeout(() => {
           const qrTarget = document.getElementById('tgp-qrcode');
           if (qrTarget && typeof QRCode !== 'undefined') {
-            new QRCode(qrTarget, { text: tgp.id, width: 90, height: 90, colorDark: "#1f2937", colorLight: "#f5f4f8" });
+            // Same renderer as the PGP card: integer modules at high
+            // resolution, pure black on white, with the quiet zone drawn in.
+            // This drew the light modules in the panel's own #f5f4f8 before, so
+            // the code had neither a silent margin nor a full contrast range —
+            // the two things a scanner needs most.
+            renderQRCodeInto(qrTarget, tgp.id, 96);
           }
         }, 50);
 
