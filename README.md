@@ -43,10 +43,21 @@ Built for **SISC**.
 | **Structure** | HTML5 (Single Page Application) |
 | **Styling** | Vanilla CSS — Dark/Light themes, responsive mobile grids |
 | **Logic** | Vanilla JavaScript (ES Modules, MVC Architecture) |
-| **Database** | Google Sheets API (Apps Script) |
+| **Hosting** | Vercel |
+| **Backend** | Appwrite — database, accounts and two functions |
+| **Database** | Appwrite (tables + team-based permissions) |
+| **Auth** | Appwrite Auth; roles enforced server-side by table permissions |
+| **Photo storage** | Vercel Blob (`api/upload-photo.js`) |
 | **Offline Engine** | Service Worker (`sw.js`) & CacheStorage API |
 | **QR Generation** | [qrcodejs](https://github.com/davidshimjs/qrcodejs) |
 | **QR Scanning** | [jsQR](https://github.com/cozmo/jsQR) (Localized for offline use) |
+
+This repo is the frontend. The database, the staff accounts and the two
+functions live in **GP-Backend** and have their own README.
+
+The Google Apps Script backend this used to run on has been removed — see
+**[MIGRATION.md](MIGRATION.md)** for what changed, what `js/config.js` still
+needs, and two bugs the move surfaced.
 
 
 ---
