@@ -609,6 +609,25 @@
     });
   }
 
+  async function readUploadResponse(res) {
+    var text = await res.text();
+    var json;
+    try {
+      json = JSON.parse(text);
+    } catch (e) {
+      if (/^\s*<!doctype|^\s*<html/i.test(text)) {
+        throw new Error('The Google Apps Script returned an HTML page instead of JSON. Make sure the Apps Script Web App is deployed as a new version with “Who has access” set to Anyone, then update SHEETS_API_URL to that /exec URL.');
+      }
+      throw new Error('The photo server returned an invalid response.');
+    }
+    // Accept both the current {success:true,data:{...}} envelope and the older direct result.
+    var result = (json && json.data && typeof json.data === 'object') ? json.data : json;
+    if (!res.ok || !result || !result.success || !result.url) {
+      throw new Error((result && result.error) || (json && json.error) || 'Photo upload failed');
+    }
+    return result;
+  }
+
   async function uploadPhoto(file, studentId) {
     var webpFile = file.type === 'image/webp' && file.size < 500 * 1024
       ? file
@@ -639,9 +658,7 @@
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload)
     });
-    var json = await res.json();
-    if (!res.ok || !json.success || !json.url) throw new Error(json.error || 'Upload failed');
-    return json.url;
+    return (await readUploadResponse(res)).url;
   }
 
   /* ── Validation ── */

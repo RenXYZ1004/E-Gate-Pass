@@ -109,7 +109,7 @@ function handleRequest(e) {
       // ── PHOTO UPLOAD to Google Drive (WebP only) ──
       case 'uploadPhoto':
         result = uploadPhotoToDrive_(JSON.parse(e.postData.contents));
-        return sendJSON(result);
+        break;
 
       default:
         result = { error: 'Unknown action: ' + action };

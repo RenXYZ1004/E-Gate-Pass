@@ -39,3 +39,5 @@ Then redeploy on Vercel.
 ## Blob store
 The store can be Public because the returned photo URL is intended to be displayed in the gatepass/ID.
 Do NOT put the Blob token in frontend JavaScript.
+
+IMPORTANT: If you see Unexpected token < / <!DOCTYPE, the browser received an Apps Script HTML page rather than JSON. Deploy the Apps Script as a Web App (Execute as you, Who has access: Anyone), copy its new /exec URL, and put it in js/config.js.
