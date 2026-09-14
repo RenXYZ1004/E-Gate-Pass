@@ -518,7 +518,8 @@ function uploadPhotoToDrive_(data) {
   var bytes = Utilities.base64Decode(String(data.base64).replace(/^data:image\/webp;base64,/i, ''));
   var blob = Utilities.newBlob(bytes, 'image/webp', fileName);
   var file = folder.createFile(blob);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  // Do not call setSharing() here. The folder's sharing policy controls access;
+  // programmatic permission changes can be blocked by Workspace policies.
   return { success:true, url:'https://lh3.googleusercontent.com/d/' + file.getId(), fileId:file.getId(), fileName:fileName, mimeType:'image/webp' };
 }
 

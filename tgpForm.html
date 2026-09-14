@@ -583,7 +583,7 @@
     maxHeight = maxHeight || 800;
     quality = quality == null ? 0.80 : quality;
     return new Promise(function(resolve, reject) {
-      if (!file || typeof file.size !== 'number' || typeof file.arrayBuffer !== 'function') { reject(new Error('Selected photo is not a valid image file.')); return; }
+      if (!file || typeof file.size !== 'number' || file.size <= 0) { reject(new Error('Selected photo is not a valid image file.')); return; }
       var sourceBlob = (file instanceof Blob) ? file : new Blob([file], { type: file.type || 'application/octet-stream' });
       var objectUrl = URL.createObjectURL(sourceBlob);
       var img = new Image();
