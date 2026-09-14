@@ -146,6 +146,7 @@ export default class StudentsController {
         const file = e.target.files[0];
         if (file) {
           try {
+            if (!(file instanceof Blob)) throw new Error('Selected photo is not a valid image file.');
             const previewUrl = URL.createObjectURL(file);
             document.getElementById('w-photo-preview').innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;">`;
             controller.tempPhotoData = await compressImageToBlob(file, 500, 500, 0.82);
@@ -165,6 +166,7 @@ export default class StudentsController {
         const file = e.target.files[0];
         if (file) {
           try {
+            if (!(file instanceof Blob)) throw new Error('Selected photo is not a valid image file.');
             const previewUrl = URL.createObjectURL(file);
             document.getElementById('edit-photo-preview').innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;">`;
             controller.editPhotoData = await compressImageToBlob(file, 500, 500, 0.82);

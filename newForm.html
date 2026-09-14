@@ -1044,6 +1044,7 @@
     quality = quality == null ? 0.80 : quality;
 
     return new Promise(function (resolve, reject) {
+      if (!(file instanceof Blob)) { reject(new Error('Selected photo is not a valid image file.')); return; }
       var objectUrl = URL.createObjectURL(file);
       var img = new Image();
 

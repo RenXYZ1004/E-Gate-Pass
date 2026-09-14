@@ -571,6 +571,7 @@
     }
     selectedPhotoFile = file;
     photoFileName.textContent = file.name;
+    if (!(file instanceof Blob)) { alert('The selected photo could not be read. Please choose the photo again.'); return; }
     photoPreviewImg.src = URL.createObjectURL(file);
     photoPlaceholder.style.display = 'none';
     photoPreviewWrap.classList.add('show');
@@ -581,6 +582,7 @@
     maxHeight = maxHeight || 800;
     quality = quality == null ? 0.80 : quality;
     return new Promise(function(resolve, reject) {
+      if (!(file instanceof Blob)) { reject(new Error('Selected photo is not a valid image file.')); return; }
       var objectUrl = URL.createObjectURL(file);
       var img = new Image();
       img.onload = function() {

@@ -35,6 +35,13 @@ export function debounce(func, wait = 300) {
 
 export function compressImageToBlob(file, maxWidth = 500, maxHeight = 500, quality = 0.80) {
   return new Promise((resolve, reject) => {
+    // URL.createObjectURL only accepts Blob/File/MediaSource. Some browsers
+    // can hand us a string/object when a file input is wrapped by another
+    // component, so fail cleanly instead of throwing the native overload error.
+    if (!(file instanceof Blob)) {
+      reject(new Error('Selected photo is not a valid image file. Please choose the photo again.'));
+      return;
+    }
     const objectUrl = URL.createObjectURL(file);
     const img = new Image();
 
