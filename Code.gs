@@ -843,3 +843,14 @@ function testAddTGP() {
   };
   Logger.log('✅ TGP added: ' + JSON.stringify(addRow('temporary_passes', sample)));
 }
+
+
+function authorizeDrive() {
+  DriveApp.getFolderById(PHOTO_FOLDER_ID).getName();
+  Logger.log('Drive authorization OK: ' + PHOTO_FOLDER_ID);
+}
+
+function testDriveAccess() {
+  var folder = DriveApp.getFolderById(PHOTO_FOLDER_ID);
+  return { success: true, folderName: folder.getName(), folderId: folder.getId() };
+}
