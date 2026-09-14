@@ -1,0 +1,9 @@
+{
+  "name": "e-gate-pass",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Southville International School and Colleges e-Gatepass System",
+  "dependencies": {
+    "nodemailer": "^6.9.16"
+  }
+}

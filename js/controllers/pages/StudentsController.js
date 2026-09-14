@@ -146,8 +146,16 @@ export default class StudentsController {
         const file = e.target.files[0];
         if (file) {
           try {
-            if (!file || typeof file.size !== 'number' || typeof file.arrayBuffer !== 'function') throw new Error('Selected photo is not a valid image file.');
-            const previewBlob = (file instanceof Blob) ? file : new Blob([file], { type: file.type || 'application/octet-stream' });
+            if (!file || typeof file.size !== 'number' || file.size <= 0) {
+              throw new Error('Selected photo is not a valid image file.');
+            }
+            const fileType = String(file.type || '').toLowerCase();
+            const fileName = String(file.name || '').toLowerCase();
+            const isImage = fileType.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(fileName);
+            if (!isImage) throw new Error('Please select a JPG, JPEG, PNG, or WebP image.');
+            const previewBlob = (typeof Blob !== 'undefined' && file instanceof Blob)
+              ? file
+              : new Blob([file], { type: file.type || 'application/octet-stream' });
             const previewUrl = URL.createObjectURL(previewBlob);
             document.getElementById('w-photo-preview').innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;">`;
             controller.tempPhotoData = await compressImageToBlob(previewBlob, 500, 500, 0.82);
@@ -167,11 +175,24 @@ export default class StudentsController {
         const file = e.target.files[0];
         if (file) {
           try {
-            if (!file || typeof file.size !== 'number' || typeof file.arrayBuffer !== 'function') throw new Error('Selected photo is not a valid image file.');
-            const previewBlob = (file instanceof Blob) ? file : new Blob([file], { type: file.type || 'application/octet-stream' });
+            if (!file || typeof file.size !== 'number' || file.size <= 0) {
+              throw new Error('Selected photo is not a valid image file.');
+            }
+            const fileType = String(file.type || '').toLowerCase();
+            const fileName = String(file.name || '').toLowerCase();
+            const isImage = fileType.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(fileName);
+            if (!isImage) throw new Error('Please select a JPG, JPEG, PNG, or WebP image.');
+            const previewBlob = (typeof Blob !== 'undefined' && file instanceof Blob)
+              ? file
+              : new Blob([file], { type: file.type || 'application/octet-stream' });
             const previewUrl = URL.createObjectURL(previewBlob);
             document.getElementById('edit-photo-preview').innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;">`;
             controller.editPhotoData = await compressImageToBlob(previewBlob, 500, 500, 0.82);
+            const uploadStatus = document.getElementById('edit-photo-upload-status');
+            if (uploadStatus) {
+              uploadStatus.textContent = 'New photo ready — it will upload to Google Drive when you save.';
+              uploadStatus.style.display = 'block';
+            }
           } catch (err) {
             console.error('Failed to compress image:', err);
             controller.view.showToast('Failed to process image.', 'error');
@@ -272,19 +293,55 @@ export default class StudentsController {
           address: document.getElementById('edit-address').value.trim()
         };
 
-        if (controller.editPhotoData) {
-          updatedStudent.photo = controller.editPhotoData;
+        const hasNewEditPhoto = !!controller.editPhotoData;
+        setButtonLoading(btnSaveEdit, true, hasNewEditPhoto ? 'Uploading photo…' : `${Icons['check-circle'](14)} Save Changes`);
+        const uploadStatus = document.getElementById('edit-photo-upload-status');
+        if (hasNewEditPhoto && uploadStatus) {
+          uploadStatus.textContent = 'Uploading photo to Google Drive…';
+          uploadStatus.style.display = 'block';
+          uploadStatus.classList.add('is-uploading');
         }
 
-        setButtonLoading(btnSaveEdit, true, `${Icons['check-circle'](14)} Save Changes`);
-
         try {
+          // If a new photo was selected, upload it to Google Drive first.
+          // Never store the Blob itself in Google Sheets. The Sheet must keep
+          // the Drive URL, just like the registration form does.
+          if (controller.editPhotoData) {
+            if (!student) throw new Error('Student record not found.');
+            const photoStudentId = String(student.pgp || student.id || id);
+            const savedPhotoUrl = await uploadPhotoLocally(
+              photoStudentId,
+              controller.editPhotoData,
+              'pgp'
+            );
+            if (!savedPhotoUrl) throw new Error('Photo upload failed.');
+            updatedStudent.photo = savedPhotoUrl;
+            if (uploadStatus) {
+              uploadStatus.textContent = 'Photo uploaded to Google Drive. Saving student…';
+              uploadStatus.classList.remove('is-uploading');
+            }
+          } else if (student && student.photo) {
+            // Preserve the existing photo URL when no new photo was selected.
+            updatedStudent.photo = student.photo;
+          }
+
           await controller.model.updateStudent(updatedStudent);
           controller.view.showToast('Student details updated successfully');
           editModal.style.display = 'none';
           controller.navigateToPage('students');
+        } catch (err) {
+          console.error('Failed to update student:', err);
+          if (uploadStatus && hasNewEditPhoto) {
+            uploadStatus.textContent = 'Photo upload failed. The existing photo was not replaced.';
+            uploadStatus.classList.remove('is-uploading');
+          }
+          controller.view.showToast(
+            err && err.message ? `Failed to update student: ${err.message}` : 'Failed to update student',
+            'error'
+          );
         } finally {
           setButtonLoading(btnSaveEdit, false);
+          if (uploadStatus) uploadStatus.classList.remove('is-uploading');
         }
       });
     }
@@ -631,6 +688,12 @@ export default class StudentsController {
         document.getElementById('edit-address').value = student.address || '';
 
         controller.editPhotoData = null;
+        const editPhotoUploadStatus = document.getElementById('edit-photo-upload-status');
+        if (editPhotoUploadStatus) {
+          editPhotoUploadStatus.textContent = '';
+          editPhotoUploadStatus.style.display = 'none';
+          editPhotoUploadStatus.classList.remove('is-uploading');
+        }
         document.getElementById('edit-photo-file').value = '';
         document.getElementById('edit-photo-preview').innerHTML = hasPhoto(student.photo) 
           ? `<img src="${escapeHTML(resolvePhotoUrl(student.photo))}" style="width:100%;height:100%;object-fit:cover;">`

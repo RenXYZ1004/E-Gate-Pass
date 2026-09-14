@@ -1,0 +1,19 @@
+{
+  "name": "e-gatepass",
+  "short_name": "e-gatepass",
+  "description": "e-gatepass System",
+  "id": "/app.html",
+  "display": "standalone",
+  "background_color": "#f8f9fa",
+  "theme_color": "#00c9b1",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./app"
+}

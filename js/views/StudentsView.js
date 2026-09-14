@@ -471,6 +471,8 @@ export default class StudentsView {
                   </div>
                   <input type="file" id="edit-photo-file" accept="image/*" class="form-input" style="flex: 1; padding: 6px;">
                 </div>
+                <div id="edit-photo-upload-status" role="status" aria-live="polite" style="display:none; margin-top:7px; font-size:12px; color:var(--primary);">
+                </div>
               </div>
 
               <div style="font-weight: 700; font-size: 13px; color: var(--primary); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">Academic & Exit</div>

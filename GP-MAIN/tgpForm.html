@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SISC e-Gatepass — Temporary Gate Pass application form">
+  <meta name="theme-color" content="#422467">
+  <link rel="icon" type="image/png" href="logo.png">
+  <title>Request a Temporary Gate Pass | SISC e-Gatepass</title>
+</head>
+
+<body>
+
+<style>
+  :root {
+    --purple: #422467;
+    --purple-light: #5c3690;
+    --teal: #00c9b1;
+    --teal-dark: #00a693;
+    --amber: #e08700;
+    --amber-light: #fff8e6;
+    --amber-border: #f3e3b3;
+    --bg: #f5f4fa;
+    --card: #ffffff;
+    --text: #231a35;
+    --text2: #6b6480;
+    --border: #e2dff0;
+    --red: #d64545;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 0;
+  }
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 16px 16px 60px;
+  }
+  .header {
+    background: var(--amber);
+    color: #fff;
+    padding: 20px 18px;
+    border-radius: 0 0 var(--radius) var(--radius);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .header img {
+    width: 56px;
+    height: auto;
+    flex-shrink: 0;
+  }
+  .header .htext { flex: 1 1 auto; min-width: 0; }
+  .back-home {
+    flex-shrink: 0;
+    margin-left: auto;
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 13px;
+    border-radius: 100px;
+    border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.18s, border-color 0.18s, transform 0.18s;
+  }
+  .back-home:hover { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.6); }
+  .back-home:active { transform: translateY(1px); }
+  @media (max-width: 520px) {
+    .header { flex-wrap: wrap; }
+    .back-home { order: 3; width: 100%; justify-content: center; margin-left: 0; margin-top: 4px; }
+  }
+  .header .htext h1 {
+    font-size: 15px; margin: 0 0 2px; line-height: 1.25; font-weight: 800; letter-spacing: 0.01em;
+  }
+  .header .htext .sub1 { font-size: 11.5px; margin: 0 0 4px; opacity: 0.9; }
+  .header .htext .sub2 { font-size: 12px; margin: 0; font-weight: 700; color: #fff3d4; }
+  .header .htext .sub3 { font-size: 11px; margin: 1px 0 0; opacity: 0.8; }
+
+  .info-banner {
+    background: var(--amber-light);
+    border-left: 4px solid var(--amber);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #5a3a00;
+  }
+  .info-banner strong { color: var(--amber); }
+  .info-banner ul { margin: 6px 0 0; padding-left: 18px; }
+  .info-banner li { margin-bottom: 3px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .card h2 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--amber);
+    margin: 0 0 14px;
+    border-bottom: 2px solid var(--amber);
+    padding-bottom: 8px;
+  }
+  .fg { margin-bottom: 14px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+  .req { color: var(--red); }
+  .help { font-size: 11.5px; color: var(--text2); margin-top: 4px; line-height: 1.45; }
+  .help.call-note {
+    background: #fff3e0;
+    border: 1px solid var(--amber-border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    color: #6b4600;
+    font-weight: 600;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="date"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 10px 11px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fff;
+  }
+  textarea { min-height: 80px; resize: vertical; }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--amber);
+    box-shadow: 0 0 0 3px rgba(224,135,0,0.12);
+  }
+  select:disabled { background: #f3f1f8; color: var(--text2); cursor: not-allowed; }
+  input.invalid, select.invalid, textarea.invalid {
+    border-color: var(--red);
+    background: #fffafa;
+  }
+  .field-error {
+    display: none;
+    font-size: 11.5px;
+    color: var(--red);
+    margin-top: 4px;
+    font-weight: 600;
+  }
+  .field-error.show { display: block; }
+
+  /* ── Photo upload ── */
+  .photo-upload-area {
+    border: 1.5px dashed var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    background: #fbfaff;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .photo-upload-area:hover { border-color: var(--amber); background: var(--amber-light); }
+  .photo-upload-area input[type="file"] { display: none; }
+  .photo-preview-wrap {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+  }
+  .photo-preview-wrap.show { display: flex; }
+  .photo-preview-wrap img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid var(--amber);
+    flex-shrink: 0;
+  }
+  .photo-upload-hint { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .photo-upload-hint strong { color: var(--amber); display: block; margin-bottom: 2px; }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 480px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .submit-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    background: var(--amber);
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .submit-btn:hover:not(:disabled) { background: #c97a00; transform: translateY(-1px); }
+  .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .msg {
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .msg-error { background: #fdeaea; color: var(--red); border: 1px solid #f3c6c6; }
+  .msg-success { background: #e6f9f6; color: var(--teal-dark); border: 1px solid #b6ecdf; }
+  .msg ul { margin: 6px 0 0; padding-left: 18px; }
+
+  /* ── Result popup ─────────────────────────────────────── */
+  .pop-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(35,26,53,0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .pop-backdrop.open { opacity: 1; pointer-events: all; }
+  .pop {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px 28px 24px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    transform: translateY(16px) scale(0.97);
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .pop-backdrop.open .pop { transform: translateY(0) scale(1); }
+  .pop-icon {
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 18px;
+  }
+  .pop-success .pop-icon { background: #e6f9f6; color: var(--teal-dark); }
+  .pop-warning .pop-icon { background: #fff8e6; color: var(--amber); }
+  .pop-error .pop-icon { background: #fdeaea; color: var(--red); }
+  .pop-title { font-size: 18px; font-weight: 800; margin-bottom: 10px; }
+  .pop-success .pop-title { color: var(--teal-dark); }
+  .pop-warning .pop-title { color: #7a5000; }
+  .pop-error .pop-title { color: var(--red); }
+  .pop-body { font-size: 13.5px; color: var(--text2); line-height: 1.6; margin-bottom: 22px; }
+  .pop-ref {
+    display: inline-block;
+    font-family: monospace;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--amber);
+    background: var(--amber-light);
+    border: 1px solid var(--amber-border);
+    border-radius: 8px;
+    padding: 6px 16px;
+    margin: 10px 0;
+    letter-spacing: 2px;
+  }
+  .pop-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: var(--amber);
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .pop-btn:hover { background: #c97a00; }
+</style>
+
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="header">
+    <img src="SISC_logo.png" alt="SISC">
+    <div class="htext">
+      <h1>Southville International School and Colleges</h1>
+      <div class="sub1">Las Piñas City, Metro Manila</div>
+      <div class="sub2">Temporary Gate Pass Application</div>
+      <div class="sub3">SY 2026–2027</div>
+    </div>
+    <a href="." class="back-home">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+        stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Back to Home
+    </a>
+  </div>
+
+  <!-- Info Banner -->
+  <div class="info-banner">
+    <strong>About Temporary Gate Passes</strong>
+    <ul>
+      <li>A TGP is a <strong>one-day pass</strong> for students who need to exit the school on a specific date.</li>
+      <li>After submitting, <strong>expect a call from the school</strong> at the contact number you provide to confirm your request.</li>
+      <li>Once approved by the school secretary, the pass will be <strong>emailed to the student's email address</strong>.</li>
+      <li>Do not proceed to the gate until you receive the approved pass by email.</li>
+    </ul>
+  </div>
+
+  <div id="topMsg"></div>
+
+  <form id="tgpForm" novalidate>
+
+    <!-- Section 1: Student Information -->
+    <div class="card">
+      <h2>Student Information</h2>
+
+      <div class="grid-2">
+        <div class="fg">
+          <label for="lastName">Last Name <span class="req">*</span></label>
+          <input type="text" id="lastName" required autocomplete="family-name">
+          <div class="field-error" id="err-lastName">Last name is required.</div>
+        </div>
+        <div class="fg">
+          <label for="firstName">First Name <span class="req">*</span></label>
+          <input type="text" id="firstName" required autocomplete="given-name">
+          <div class="field-error" id="err-firstName">First name is required.</div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label for="studid">Student ID <span class="req">*</span></label>
+        <input type="text" id="studid" required placeholder="e.g. 26-0015c" autocomplete="off">
+        <div class="field-error" id="err-studid">Student ID is required.</div>
+      </div>
+
+      <div class="grid-2">
+        <div class="fg">
+          <label for="grade">Grade <span class="req">*</span></label>
+          <select id="grade" required>
+            <option value="">-- Select Grade --</option>
+            <option>Grade 7</option>
+            <option>Grade 8</option>
+            <option>Grade 9</option>
+            <option>Grade 10</option>
+            <option>Grade 11</option>
+            <option>Grade 12</option>
+            <option>IB1</option>
+            <option>IB2</option>
+          </select>
+          <div class="field-error" id="err-grade">Select a grade level.</div>
+        </div>
+        <div class="fg">
+          <label for="section">Section <span class="req">*</span></label>
+          <select id="section" required disabled>
+            <option value="">Select the grade level first</option>
+          </select>
+          <div class="field-error" id="err-section">Select a section.</div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label for="studentEmail">Student Email <span class="req">*</span></label>
+        <input type="email" id="studentEmail" required placeholder="student@email.com" autocomplete="email">
+        <div class="help">The approved TGP card will be sent to this email address.</div>
+        <div class="field-error" id="err-studentEmail">Enter a valid email address.</div>
+      </div>
+
+      <div class="fg">
+        <label>Student Photo <span style="color:var(--text2);font-weight:400;">(optional)</span></label>
+        <div class="photo-upload-area" id="photoUploadArea" role="button" tabindex="0" aria-label="Upload student photo">
+          <input type="file" id="studentPhoto" accept="image/*">
+          <div id="photoPlaceholder">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <div style="font-size:13px;color:var(--text2);">Tap to upload a photo of the student</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:3px;">JPG or PNG · Max 5 MB</div>
+          </div>
+          <div class="photo-preview-wrap" id="photoPreviewWrap">
+            <img id="photoPreviewImg" src="" alt="Preview">
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text);" id="photoFileName"></div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px;">Tap to change photo</div>
+            </div>
+          </div>
+        </div>
+        <div class="help" style="margin-top:6px;">A clear, recent photo helps the guard identify the student at the gate.</div>
+      </div>
+    </div>
+
+    <!-- Section 2: Pass Details -->
+    <div class="card">
+      <h2>Pass Details</h2>
+
+      <div class="grid-2">
+        <div class="fg">
+          <label for="validDate">Date Needed <span class="req">*</span></label>
+          <input type="date" id="validDate" required>
+          <div class="help">Select the date the student needs to exit.</div>
+          <div class="field-error" id="err-validDate">Select a valid date.</div>
+        </div>
+        <div class="fg">
+          <label for="gate">Designated Gate <span class="req">*</span></label>
+          <select id="gate" required>
+            <option value="">-- Select Gate --</option>
+            <option>Tropical Gate</option>
+            <option>Gate 1</option>
+            <option>Gate 2</option>
+            <option>College Gate</option>
+            <option>Monarchs Gym</option>
+          </select>
+          <div class="field-error" id="err-gate">Select a gate.</div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label for="reason">Reason for Temporary Exit <span class="req">*</span></label>
+        <textarea id="reason" required placeholder="e.g. Forgotten ID, Medical appointment, Early dismissal..."></textarea>
+        <div class="field-error" id="err-reason">Please provide a reason.</div>
+      </div>
+    </div>
+
+    <!-- Section 3: Parent / Guardian Contact -->
+    <div class="card">
+      <h2>Parent / Guardian Contact</h2>
+
+      <div class="fg">
+        <label for="parentName">Name of Parent/Guardian <span class="req">*</span></label>
+        <input type="text" id="parentName" required autocomplete="name">
+        <div class="field-error" id="err-parentName">Parent/guardian name is required.</div>
+      </div>
+
+      <div class="fg">
+        <label for="contactPhone">Contact Number <span class="req">*</span></label>
+        <input type="tel" id="contactPhone" required inputmode="numeric" maxlength="11" autocomplete="tel-national" placeholder="09171234567">
+        <div class="help call-note">
+          📞 The school will call this number to verify your request before approving the pass.
+        </div>
+        <div class="help" style="margin-top:6px;">Philippine format: 11 digits starting with 09. Do not use +63, spaces, or dashes.</div>
+        <div class="field-error" id="err-contactPhone">Enter an 11-digit mobile number starting with 09.</div>
+      </div>
+
+      <div class="fg">
+        <label for="parentEmail">Parent/Guardian Email <span style="color:var(--text2);font-weight:400;">(optional)</span></label>
+        <input type="email" id="parentEmail" placeholder="parent@email.com" autocomplete="email">
+        <div class="help">Will also receive a copy of the approved pass if provided.</div>
+        <div class="field-error" id="err-parentEmail">Enter a valid email address.</div>
+      </div>
+    </div>
+
+    <button type="submit" class="submit-btn" id="submitBtn">Submit TGP Request</button>
+  </form>
+</div>
+
+<!-- ═══ RESULT POPUP ═══ -->
+<div class="pop-backdrop" id="popBackdrop" role="dialog" aria-modal="true" aria-labelledby="popTitle">
+  <div class="pop" id="popBox">
+    <div class="pop-icon" id="popIcon"></div>
+    <div class="pop-title" id="popTitle"></div>
+    <div class="pop-body" id="popBody"></div>
+    <button type="button" class="pop-btn" id="popBtn">OK</button>
+  </div>
+</div>
+
+<script>
+  /* ── Section population (same data as newForm.html) ── */
+  var SECTIONS = {
+    "Grade 7":  ["Determination","Gratitude","Kindness","Mindfulness","Optimism","Resilience"],
+    "Grade 8":  ["Creativity","Empathy","Enthusiasm","Integrity","Joy","Justice"],
+    "Grade 9":  ["Compassion","Diligence","Fortitude","Generosity","Harmony","Sincerity"],
+    "Grade 10": ["Commitment","Conviction","Leadership","Patriotism","Prudence","Responsibility","Teamwork"],
+    "Grade 11": ["Competence","Efficiency","Excellence","Growth Mindset","Industry","Innovation","Synergy"],
+    "Grade 12": ["Diplomacy","Dynamism","Grit","Initiative","Rigor","Service","Tenacity"],
+    IB1: ["Inquirers","Communicators"],
+    IB2: ["Risk-Takers","Balanced"]
+  };
+
+  var $ = function(id) { return document.getElementById(id); };
+
+  /* Set min date = today, max date = today + 7 days */
+  (function() {
+    var today = new Date();
+    var maxDate = new Date(today);
+    maxDate.setDate(maxDate.getDate() + 7);
+    var pad = function(n) { return String(n).padStart(2, '0'); };
+    var fmt = function(d) { return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); };
+    $('validDate').min = fmt(today);
+    $('validDate').max = fmt(maxDate);
+  })();
+
+  /* ── Section dropdown ── */
+  function populateSections() {
+    var grade = $('grade').value;
+    var sel = $('section');
+    sel.innerHTML = '';
+    if (!grade) {
+      sel.appendChild(new Option('Select the grade level first', ''));
+      sel.disabled = true;
+      return;
+    }
+    var list = SECTIONS[grade] || [];
+    sel.appendChild(new Option('Select section', ''));
+    list.forEach(function(s) { sel.appendChild(new Option(s, s)); });
+    sel.disabled = false;
+    clearError('section');
+  }
+
+  $('grade').addEventListener('change', function() { populateSections(); clearError('grade'); });
+  $('section').addEventListener('change', function() { clearError('section'); });
+
+  /* ── Philippine mobile number ── */
+  var phoneInput = $('contactPhone');
+  phoneInput.addEventListener('input', function() {
+    var digits = phoneInput.value.replace(/\D/g, '');
+    if (digits.indexOf('63') === 0 && digits.length > 10) digits = '0' + digits.slice(2);
+    phoneInput.value = digits.slice(0, 11);
+    if (isValidPHMobile(phoneInput.value)) clearError('contactPhone');
+  });
+  function isValidPHMobile(v) { return /^09\d{9}$/.test(v); }
+
+  /* ── Crypto token (same algorithm as the internal generateQRToken) ── */
+  function generateQRToken(length) {
+    var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    var arr = new Uint8Array(length);
+    crypto.getRandomValues(arr);
+    return Array.from(arr).map(function(b) { return chars[b % chars.length]; }).join('');
+  }
+
+  /* ── Photo upload ── */
+  var photoUploadArea = $('photoUploadArea');
+  var photoInput = $('studentPhoto');
+  var photoPreviewWrap = $('photoPreviewWrap');
+  var photoPlaceholder = $('photoPlaceholder');
+  var photoPreviewImg = $('photoPreviewImg');
+  var photoFileName = $('photoFileName');
+  var selectedPhotoFile = null;
+
+  photoUploadArea.addEventListener('click', function() { photoInput.click(); });
+  photoUploadArea.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); photoInput.click(); } });
+
+  photoInput.addEventListener('change', function() {
+    var file = photoInput.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Photo must be under 5 MB. Please choose a smaller file.');
+      photoInput.value = '';
+      return;
+    }
+    selectedPhotoFile = file;
+    photoFileName.textContent = file.name;
+    if (!file || typeof file.size !== 'number' || typeof file.arrayBuffer !== 'function') { alert('The selected photo could not be read. Please choose the photo again.'); return; }
+    var previewBlob = (file instanceof Blob) ? file : new Blob([file], { type: file.type || 'application/octet-stream' });
+    photoPreviewImg.src = URL.createObjectURL(previewBlob);
+    photoPlaceholder.style.display = 'none';
+    photoPreviewWrap.classList.add('show');
+  });
+
+  function convertPhotoToWebP(file, maxWidth, maxHeight, quality) {
+    maxWidth = maxWidth || 800;
+    maxHeight = maxHeight || 800;
+    quality = quality == null ? 0.80 : quality;
+    return new Promise(function(resolve, reject) {
+      if (!file || typeof file.size !== 'number' || file.size <= 0) { reject(new Error('Selected photo is not a valid image file.')); return; }
+      var sourceBlob = (file instanceof Blob) ? file : new Blob([file], { type: file.type || 'application/octet-stream' });
+      var objectUrl = URL.createObjectURL(sourceBlob);
+      var img = new Image();
+      img.onload = function() {
+        try {
+          var scale = Math.min(1, maxWidth / img.naturalWidth, maxHeight / img.naturalHeight);
+          var canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(function(blob) {
+            URL.revokeObjectURL(objectUrl);
+            if (!blob) return reject(new Error('Could not convert photo to WebP'));
+            resolve(blob);
+          }, 'image/webp', quality);
+        } catch (err) {
+          URL.revokeObjectURL(objectUrl);
+          reject(err);
+        }
+      };
+      img.onerror = function() { URL.revokeObjectURL(objectUrl); reject(new Error('Could not read photo')); };
+      img.src = objectUrl;
+    });
+  }
+
+  async function readUploadResponse(res) {
+    var text = await res.text();
+    var json;
+    try {
+      json = JSON.parse(text);
+    } catch (e) {
+      if (/^\s*<!doctype|^\s*<html/i.test(text)) {
+        throw new Error('The Google Apps Script returned an HTML page instead of JSON. Make sure the Apps Script Web App is deployed as a new version with “Who has access” set to Anyone, then update SHEETS_API_URL to that /exec URL.');
+      }
+      throw new Error('The photo server returned an invalid response.');
+    }
+    // Accept both the current {success:true,data:{...}} envelope and the older direct result.
+    var result = (json && json.data && typeof json.data === 'object') ? json.data : json;
+    if (!res.ok || !result || !result.success || !result.url) {
+      throw new Error((result && result.error) || (json && json.error) || 'Photo upload failed');
+    }
+    return result;
+  }
+
+  async function uploadPhoto(file, studentId) {
+    var webpFile = file.type === 'image/webp' && file.size < 500 * 1024
+      ? file
+      : await convertPhotoToWebP(file, 800, 800, 0.80);
+    var dataUrl = await new Promise(function(resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function() { resolve(String(reader.result || '')); };
+      reader.onerror = function() { reject(new Error('Could not prepare the photo for upload.')); };
+      reader.readAsDataURL(webpFile);
+    });
+    var payload = {
+      studentId: String(studentId || 'tgp-photo'),
+      kind: 'tgp',
+      base64: dataUrl,
+      mimeType: 'image/webp',
+      fileName: String(studentId || 'tgp-photo') + '.webp'
+    };
+
+    var endpoint;
+    try {
+      var cfg = await import('./js/config.js');
+      endpoint = cfg.SHEETS_API_URL;
+    } catch (_) {
+      throw new Error('Could not load the application settings.');
+    }
+    var res = await fetch(endpoint + '?action=uploadPhoto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    return (await readUploadResponse(res)).url;
+  }
+
+  /* ── Validation ── */
+  function showError(key) {
+    var err = $('err-' + key);
+    var field = $(key);
+    if (err) err.classList.add('show');
+    if (field) field.classList.add('invalid');
+  }
+  function clearError(key) {
+    var err = $('err-' + key);
+    var field = $(key);
+    if (err) err.classList.remove('show');
+    if (field) field.classList.remove('invalid');
+  }
+  function clearAllErrors() {
+    ['lastName','firstName','studid','grade','section','studentEmail','validDate','gate','reason','parentName','contactPhone','parentEmail']
+      .forEach(clearError);
+  }
+  function showMsg(text, type) {
+    $('topMsg').innerHTML = '<div class="msg msg-' + type + '">' + text + '</div>';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* ── Popup ── */
+  var POP_ICONS = {
+    success: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    warning: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    error:   '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+  };
+
+  var popBackdrop = $('popBackdrop');
+  var popBox = $('popBox');
+  var lastFocused = null;
+
+  function closePopup() {
+    popBackdrop.classList.remove('open');
+    document.removeEventListener('keydown', popKeyHandler);
+    if (lastFocused && lastFocused.focus) lastFocused.focus();
+    lastFocused = null;
+  }
+  function popKeyHandler(e) {
+    if (e.key === 'Escape' || e.key === 'Enter') { e.preventDefault(); closePopup(); }
+  }
+  function showPopup(title, html, type, btnText) {
+    type = POP_ICONS[type] ? type : 'success';
+    lastFocused = document.activeElement;
+    popBox.className = 'pop pop-' + type;
+    $('popIcon').innerHTML = POP_ICONS[type];
+    $('popTitle').textContent = title;
+    $('popBody').innerHTML = html;
+    $('popBtn').textContent = btnText || 'OK';
+    popBackdrop.classList.add('open');
+    document.addEventListener('keydown', popKeyHandler);
+    setTimeout(function() { $('popBtn').focus(); }, 60);
+  }
+  $('popBtn').addEventListener('click', closePopup);
+  popBackdrop.addEventListener('click', function(e) { if (e.target === popBackdrop) closePopup(); });
+
+  function esc(text) {
+    var d = document.createElement('div');
+    d.textContent = text == null ? '' : String(text);
+    return d.innerHTML;
+  }
+
+  /* ── Validation ── */
+  function validate() {
+    clearAllErrors();
+    var problems = [];
+
+    if (!$('lastName').value.trim())  { showError('lastName');  problems.push('Last name'); }
+    if (!$('firstName').value.trim()) { showError('firstName'); problems.push('First name'); }
+    if (!$('studid').value.trim())    { showError('studid');    problems.push('Student ID'); }
+    if (!$('grade').value)            { showError('grade');     problems.push('Grade'); }
+    if (!$('section').value)          { showError('section');   problems.push('Section'); }
+
+    var sEmail = $('studentEmail').value.trim();
+    if (!sEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sEmail)) {
+      showError('studentEmail'); problems.push('Student email');
+    }
+
+    if (!$('validDate').value) { showError('validDate'); problems.push('Date needed'); }
+    if (!$('gate').value)      { showError('gate');      problems.push('Designated gate'); }
+    if (!$('reason').value.trim()) { showError('reason'); problems.push('Reason for exit'); }
+
+    if (!$('parentName').value.trim()) { showError('parentName'); problems.push('Parent/guardian name'); }
+    if (!isValidPHMobile($('contactPhone').value.trim())) {
+      showError('contactPhone'); problems.push('Contact number');
+    }
+
+    var pEmail = $('parentEmail').value.trim();
+    if (pEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pEmail)) {
+      showError('parentEmail'); problems.push('Parent/guardian email');
+    }
+
+    return problems;
+  }
+
+  /* ── API submission ── */
+  async function apiEndpoint() {
+    try {
+      var cfg = await import('./js/config.js');
+      if (cfg && cfg.SHEETS_API_URL) return cfg.SHEETS_API_URL;
+    } catch (_) { }
+    throw new Error('Could not load the application settings. Refresh the page and try again.');
+  }
+
+  async function submitTGP(data) {
+    var endpoint = await apiEndpoint();
+    var res;
+    try {
+      res = await fetch(endpoint + '?action=addTGP', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(data)
+      });
+    } catch (_) {
+      throw new Error('Could not reach the server. Check your internet connection and try again.');
+    }
+    if (!res.ok) throw new Error('The server returned HTTP ' + res.status + '. Please try again.');
+    try { return await res.json(); } catch (_) {
+      throw new Error('The server sent a reply the form could not read. Please try again, or contact the school office.');
+    }
+  }
+
+  /* ── Submit ── */
+  $('tgpForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var btn = $('submitBtn');
+    $('topMsg').innerHTML = '';
+
+    var problems = validate();
+    if (problems.length) {
+      var list = 'Check these fields before submitting:<ul><li>' + problems.map(esc).join('</li><li>') + '</li></ul>';
+      showMsg(list, 'error');
+      showPopup('Incomplete Request', list, 'error', 'Got it');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+
+    var tgpId = 'TGP-' + generateQRToken(6);
+    var lastName  = $('lastName').value.trim();
+    var firstName = $('firstName').value.trim();
+    var fullName  = lastName + ', ' + firstName;
+
+    var data = {
+      id:           tgpId,
+      studentId:    $('studid').value.trim(),
+      name:         fullName,
+      grade:        $('grade').value,
+      section:      $('section').value,
+      studentEmail: $('studentEmail').value.trim(),
+      validDate:    $('validDate').value,
+      gate:         $('gate').value,
+      reason:       $('reason').value.trim(),
+      requester:    $('parentName').value.trim(),
+      contactPhone: $('contactPhone').value.trim(),
+      parentEmail:  $('parentEmail').value.trim(),
+      status:       'pending',
+      source:       'online',
+      createdAt:    new Date().toISOString()
+    };
+
+    try {
+      // Optional photo — upload bytes directly; proceed without it on any failure
+      if (selectedPhotoFile) {
+        try {
+          btn.textContent = 'Uploading photo…';
+          data.photo = await uploadPhoto(selectedPhotoFile, data.id || data.studentId || data.name || 'tgp-photo');
+        } catch (_) {
+          // Photo upload is optional — don't block submission
+        }
+      }
+
+      btn.textContent = 'Submitting…';
+      await submitTGP(data);
+
+      var dateDisplay = new Date(data.validDate + 'T00:00:00').toLocaleDateString('en-PH', {
+        weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+      });
+
+      showMsg('Your TGP request has been submitted. Reference: ' + esc(tgpId), 'success');
+      showPopup(
+        'Request Submitted',
+        'Your Temporary Gate Pass request has been received.' +
+        '<br><br>Reference Number:<br><span class="pop-ref">' + esc(tgpId) + '</span>' +
+        '<br><br><strong>Valid Date:</strong> ' + esc(dateDisplay) +
+        '<br><strong>Gate:</strong> ' + esc(data.gate) +
+        '<br><br>The school will call <strong>' + esc(data.contactPhone) + '</strong> to verify your request. ' +
+        'The approved pass will be emailed to <strong>' + esc(data.studentEmail) + '</strong>.' +
+        '<br><br><em>Do not go to the gate until you receive the approved pass by email.</em>',
+        'success',
+        'Done'
+      );
+
+      $('tgpForm').reset();
+      populateSections();
+      selectedPhotoFile = null;
+      photoPreviewWrap.classList.remove('show');
+      photoPlaceholder.style.display = '';
+      photoPreviewImg.src = '';
+      photoFileName.textContent = '';
+
+    } catch (err) {
+      var reason = (err && err.message) || String(err);
+      showMsg('Something went wrong: ' + esc(reason), 'error');
+      showPopup('Submission Failed', esc(reason), 'error', 'Try Again');
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Submit TGP Request';
+    btn.style.opacity = '';
+  });
+
+  /* Load active gates from the API and rebuild the gate dropdown dynamically. */
+  async function loadGates() {
+    try {
+      var url = await apiEndpoint();
+      var res = await fetch(url + '?action=getGates&_t=' + Date.now(), { cache: 'no-store' });
+      var json = await res.json();
+      if (!json.success || !json.data || !json.data.length) return;
+      var active = json.data.filter(function(g) { return (g.Status || 'active').toLowerCase() === 'active'; });
+      if (!active.length) return;
+      var sel = $('gate');
+      if (!sel) return;
+      var current = sel.value;
+      sel.innerHTML = '<option value="">-- Select Gate --</option>' + active.map(function(g) {
+        var safe = g.GateName.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+        var selected = current === g.GateName ? ' selected' : '';
+        return '<option value="' + safe + '"' + selected + '>' + safe + '</option>';
+      }).join('');
+    } catch (_) { /* fall back to defaults already in the DOM */ }
+  }
+  loadGates();
+
+  /* Initial state */
+  populateSections();
+</script>
+
+</body>
+</html>
