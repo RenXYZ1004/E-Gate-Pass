@@ -122,7 +122,7 @@ export default class TGPController {
           if (tgpPhotoFile) {
             try {
               const imageBlob = await compressImageToBlob(tgpPhotoFile, 500, 500, 0.82);
-              newTGP.photo = await uploadPhotoLocally(newTGP.id || studentId || newTGP.name || 'tgp-photo', imageBlob);
+              newTGP.photo = await uploadPhotoLocally(newTGP.id || studentId || newTGP.name || 'tgp-photo', imageBlob, 'tgp');
             } catch (err) {
               console.warn('Optional TGP photo upload failed:', err);
             }

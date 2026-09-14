@@ -1,15 +1,15 @@
 # E-Gate Pass photo upload fix
 
 ## Files
-- `api/upload-photo.js` — uploads the student's photo to Vercel Blob.
+- `api/upload-photo.js` — uploads the student's photo to Google Drive.
 - `package.json` — includes `@vercel/blob`.
 
 ## Vercel environment variable
 In the SAME Vercel project that hosts the website, add:
 
-`BLOB_READ_WRITE_TOKEN`
+``
 
-Use the token automatically created by the Vercel Blob store.
+Use the token automatically created by the Google Drive store.
 
 Enable it for Production (and Preview if you test Preview deployments).
 
@@ -31,7 +31,7 @@ From the project root:
 
 npm install
 git add package.json api/upload-photo.js
-git commit -m "Fix Vercel Blob student photo upload"
+git commit -m "Fix Google Drive student photo upload"
 git push
 
 Then redeploy on Vercel.

@@ -160,7 +160,7 @@ export default class AppModel {
       parentEmail: s.ParentEmail || '',
       phone: String(s.ParentMobile || ''),
       address: s.Address || '',
-      // Photo is normally a Vercel Blob URL. Accept the common alternate
+      // Photo is normally a Google Drive URL. Accept common alternate
       // field names too, so older Sheets rows still display correctly.
       photo: s.Photo || s.photo || s.PhotoURL || s.photoUrl || '',
       status: s.Status || 'active',

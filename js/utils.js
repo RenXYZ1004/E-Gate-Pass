@@ -33,7 +33,7 @@ export function debounce(func, wait = 300) {
   };
 }
 
-export function compressImageToBlob(file, maxWidth = 250, maxHeight = 250, quality = 0.78) {
+export function compressImageToBlob(file, maxWidth = 500, maxHeight = 500, quality = 0.80) {
   return new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file);
     const img = new Image();
@@ -59,7 +59,7 @@ export function compressImageToBlob(file, maxWidth = 250, maxHeight = 250, quali
             return;
           }
           resolve(blob);
-        }, 'image/jpeg', quality);
+        }, 'image/webp', quality);
       } catch (err) {
         URL.revokeObjectURL(objectUrl);
         reject(err);
@@ -98,7 +98,7 @@ export function resolvePhotoUrl(photoValue) {
   const trimmed = String(photoValue || '').trim();
   if (!trimmed) return '';
 
-  // An inline data URI. Photos captured before the Vercel Blob migration were
+  // An inline data URI. Photos captured before the storage migration were
   // canvas-encoded to WebP and written straight into the Photo column, so the
   // records already in Sheets are still data URIs. Dropping this branch — as
   // the Blob migration did — did not merely skip an old format: it blanked the
@@ -113,7 +113,7 @@ export function resolvePhotoUrl(photoValue) {
     return trimmed;
   }
 
-  // A full URL (Vercel Blob, Drive, Cloudinary, etc.).
+  // A full URL (Drive, Vercel Blob, Cloudinary, etc.).
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     // Drive share links are the one shape that cannot go into an <img> as
     // written. Google stopped serving raw bytes from /uc?export=view — it
@@ -160,32 +160,49 @@ export function hasPhoto(photoValue) {
 }
 
 /**
- * Upload an image Blob/File directly to the persistent Vercel Blob endpoint.
- * No Base64 conversion and no Base64 fallback are used.
+ * Convert/upload an image as compact WebP through the Google Apps Script backend.
+ * Google Drive stores the file; Google Sheets stores only its public URL.
  *
  * @param {string} studentId — the student's PassID (used as filename)
  * @param {Blob} imageBlob — image bytes to upload
  * @returns {Promise<string>} The saved Blob URL
  */
-export async function uploadPhotoLocally(studentId, imageBlob) {
+export async function uploadPhotoLocally(studentId, imageBlob, kind = 'pgp') {
   if (!studentId || !(imageBlob instanceof Blob)) {
     throw new Error('A student ID and image file are required.');
   }
-
-  const res = await fetch(`/api/upload-photo?studentId=${encodeURIComponent(studentId)}`, {
+  const webp = imageBlob.type === 'image/webp'
+    ? imageBlob
+    : await compressImageToBlob(imageBlob, 800, 800, 0.80);
+  const base64 = await blobToBase64(webp);
+  const endpoint = (await import('./config.js')).SHEETS_API_URL;
+  const res = await fetch(endpoint + '?action=uploadPhoto', {
     method: 'POST',
-    headers: { 'Content-Type': imageBlob.type || 'image/jpeg' },
-    body: imageBlob
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({
+      studentId: String(studentId),
+      kind: kind === 'tgp' ? 'tgp' : 'pgp',
+      base64: base64,
+      mimeType: 'image/webp',
+      fileName: String(studentId) + '.webp'
+    })
   });
-
   let json = {};
-  try { json = await res.json(); } catch (_) { }
+  try { json = await res.json(); } catch (_) {}
   if (!res.ok || !json.success || !json.url) {
     throw new Error(json.error || `Photo upload failed (HTTP ${res.status}).`);
   }
-
-  console.log(`[PhotoUpload] Saved to persistent storage: ${json.url}`);
+  console.log(`[PhotoUpload] Saved WebP to Google Drive: ${json.url}`);
   return json.url;
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Could not prepare the photo for upload.'));
+    reader.readAsDataURL(blob);
+  });
 }
 
 // ════════════════════════════════════════════════════════════════

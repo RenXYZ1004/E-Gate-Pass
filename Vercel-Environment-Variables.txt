@@ -26,8 +26,8 @@ Environment variables must be enabled for Production. Vercel applies changed env
 Do NOT commit client secrets, refresh tokens, .env files, or gmail-oauth-token.json to GitHub.
 
 
-PHOTO STORAGE (Vercel Blob)
-BLOB_READ_WRITE_TOKEN=Optional static Vercel Blob read/write token
-BLOB_READ_WRITE_TOKEN_STORE_ID=Vercel Blob store ID (created automatically when using the custom prefix shown in Vercel Storage)
+PHOTO STORAGE (Google Drive)
+=Optional static Google Drive read/write token
+_STORE_ID=Google Drive store ID (created automatically when using the custom prefix shown in Vercel Storage)
 
 Create a Blob store in Vercel and copy its token into the Production environment.

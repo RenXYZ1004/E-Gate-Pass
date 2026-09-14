@@ -14,7 +14,12 @@
 // ════════════════════════════════════════════════════════════════
 
 // ── Web App Entry Points ─────────────────────────────────────
-var PHOTO_FOLDER_ID = '1lGruwDr_nhouwRhZUf0qzvGedcbB_4GZ';
+var PHOTO_FOLDER_ID = '1D0XZn5jixNEiL0W2IMz0rau-oikqx_3L';
+var SPREADSHEET_ID = '1goM8RJzzA39pgRbtj9Vuv-glTe8tw_JaAqcF6uuKhm4';
+
+function getConfiguredSpreadsheet_() {
+  return SpreadsheetApp.openById(SPREADSHEET_ID);
+}
 
 function doGet(e) {
   return handleRequest(e);
@@ -101,17 +106,10 @@ function handleRequest(e) {
         result = submitApplication(JSON.parse(e.postData.contents));
         break;
 
-              // ── PHOTO UPLOAD to Drive ──
+      // ── PHOTO UPLOAD to Google Drive (WebP only) ──
       case 'uploadPhoto':
-        var upData = JSON.parse(e.postData.contents);
-        var upUrl = '';
-        if (upData.base64 && upData.studentId) {
-          var upExt = (upData.mimeType || 'image/jpeg').split('/')[1] || 'jpg';
-          if (upExt === 'jpeg') upExt = 'jpg';
-          var upFile = upData.fileName || (upData.studentId + '.' + upExt);
-          upUrl = savePhotoToDrive_(upData.studentId, upData.base64, upData.mimeType || 'image/jpeg', upFile);
-        }
-        return sendJSON({ success: !!upUrl, url: upUrl });
+        result = uploadPhotoToDrive_(JSON.parse(e.postData.contents));
+        return sendJSON(result);
 
       default:
         result = { error: 'Unknown action: ' + action };
@@ -141,7 +139,7 @@ function sendJSON(obj) {
  * Each object uses the header row as keys.
  */
 function getSheetData(sheetName) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getConfiguredSpreadsheet_();
   var sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
     throw new Error('Sheet tab "' + sheetName + '" not found. Please create it in your spreadsheet.');
@@ -180,7 +178,7 @@ function getAllData() {
     scan_logs: getSheetData('scan_logs'),
     temporary_passes: getSheetData('temporary_passes'),
     users: getSheetData('users'),
-    gates: SpreadsheetApp.getActiveSpreadsheet().getSheetByName('gates') ? getSheetData('gates') : []
+    gates: getConfiguredSpreadsheet_().getSheetByName('gates') ? getSheetData('gates') : []
   };
 }
 
@@ -199,7 +197,7 @@ function testGateActionsNow() {
  * Add a new row to a sheet. The object keys must match the header names.
  */
 function addRow(sheetName, obj) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getConfiguredSpreadsheet_();
   var sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
     throw new Error('Sheet tab "' + sheetName + '" not found. Please create it in your spreadsheet.');
@@ -219,7 +217,7 @@ function addRow(sheetName, obj) {
  * The first column of the sheet is always treated as the ID column.
  */
 function updateField(sheetName, id, field, value) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getConfiguredSpreadsheet_();
   var sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
     throw new Error('Sheet tab "' + sheetName + '" not found. Please create it in your spreadsheet.');
@@ -252,7 +250,7 @@ function updateField(sheetName, id, field, value) {
  * Replaces all fields in the matched row with values from the provided object.
  */
 function updateRow(sheetName, obj) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getConfiguredSpreadsheet_();
   var sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
     throw new Error('Sheet tab "' + sheetName + '" not found. Please create it in your spreadsheet.');
@@ -280,7 +278,7 @@ function updateRow(sheetName, obj) {
  * Delete a row by ID (first column match).
  */
 function deleteRow(sheetName, id) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getConfiguredSpreadsheet_();
   var sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
     throw new Error('Sheet tab "' + sheetName + '" not found. Please create it in your spreadsheet.');
@@ -379,7 +377,7 @@ function testAddTGP() {
 }
 
 function submitApplication(data) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getConfiguredSpreadsheet_();
   var sheet = ss.getSheetByName('students');
 
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
@@ -390,25 +388,19 @@ function submitApplication(data) {
   var completeName = ((data.lastname || '') + ', ' + (data.firstname || '')).trim().replace(/^,\s*/, '');
 
   // ── Photo ────────────────────────────────────────────────
-  // newForm.html uploads the file bytes to Vercel Blob before it submits, so
-  // studentPhoto now arrives as { url, fileName, mimeType } and the sheet only
-  // has to store that URL. This branch used to test studentPhoto.base64 alone,
-  // which no longer exists in the payload — so every online application after
-  // the Blob migration was filed with an empty Photo cell.
-  // The base64 branch stays for older callers that still post image bytes.
+  // New uploads are already stored in Google Drive as WebP; Sheets stores only
+  // the resulting public image URL. The base64 fallback supports older callers
+  // and still forces the saved file to WebP.
   var photoUrl = '';
   if (data.studentPhoto && data.studentPhoto.url) {
     photoUrl = String(data.studentPhoto.url).trim();
   } else if (data.studentPhoto && data.studentPhoto.base64) {
     var ph = data.studentPhoto;
-    var phExt = (ph.mimeType || 'image/jpeg').split('/')[1] || 'jpg';
-    if (phExt === 'jpeg') phExt = 'jpg';
-    var phFile = ph.fileName || ((data.studid || 'photo') + '.' + phExt);
     photoUrl = savePhotoToDrive_(
       data.studid || data.name || 'photo',
       ph.base64,
-      ph.mimeType || 'image/jpeg',
-      phFile
+      'image/webp',
+      ((data.studid || 'photo') + '.webp')
     );
   }
 
@@ -440,31 +432,55 @@ function submitApplication(data) {
   return { success: true, passId: passId };
 }
 
-function savePhotoToDrive_(studentId, base64, mimeType, fileName) {
-  try {
-    var folder = DriveApp.getFolderById(PHOTO_FOLDER_ID);
-    // Replace existing file with same name
-    var existing = folder.getFilesByName(fileName);
-    while (existing.hasNext()) existing.next().setTrashed(true);
+function getPhotoSubfolder_(kind) {
+  var root = DriveApp.getFolderById(PHOTO_FOLDER_ID);
+  var name = String(kind || 'pgp').toLowerCase() === 'tgp' ? 'tgp' : 'pgp';
+  var folders = root.getFoldersByName(name);
+  return folders.hasNext() ? folders.next() : root.createFolder(name);
+}
 
-    var blob = Utilities.newBlob(
-      Utilities.base64Decode(base64),
-      mimeType || 'image/jpeg',
-      fileName
-    );
-    var file = folder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    // Return the googleusercontent host, not drive.google.com/uc?export=view.
-    // Google stopped serving raw bytes from the uc endpoint: it answers an
-    // HTML interstitial and needs the viewer's cookies, so such a URL loads
-    // fine when pasted into a tab but renders as a broken image inside the
-    // app. lh3 serves the image itself with permissive CORS, which html2canvas
-    // also needs to draw the photo into the downloaded ID card.
-    return 'https://lh3.googleusercontent.com/d/' + file.getId();
-  } catch (e) {
-    Logger.log('savePhotoToDrive_ error: ' + e.message);
-    return '';
+function uploadPhotoToDrive(data) {
+  return uploadPhotoToDrive_(data);
+}
+
+function uploadPhotoToDrive_(data) {
+  data = data || {};
+  if (!data.studentId) throw new Error('Student ID is required.');
+  if (!data.base64) throw new Error('No photo data received.');
+  if (String(data.mimeType || '').toLowerCase() !== 'image/webp') {
+    throw new Error('Photos must be converted to WebP before upload.');
   }
+
+  var kind = String(data.kind || 'pgp').toLowerCase() === 'tgp' ? 'tgp' : 'pgp';
+  var safeId = String(data.studentId).replace(/[\\/:*?"<>|]/g, '').trim().slice(0, 120) || 'photo';
+  var fileName = safeId + '.webp';
+  var folder = getPhotoSubfolder_(kind);
+
+  var existing = folder.getFilesByName(fileName);
+  while (existing.hasNext()) existing.next().setTrashed(true);
+
+  var bytes = Utilities.base64Decode(String(data.base64).replace(/^data:image\/webp;base64,/i, ''));
+  var blob = Utilities.newBlob(bytes, 'image/webp', fileName);
+  var file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  return {
+    success: true,
+    url: 'https://lh3.googleusercontent.com/d/' + file.getId(),
+    fileId: file.getId(),
+    fileName: fileName,
+    mimeType: 'image/webp'
+  };
+}
+
+function savePhotoToDrive_(studentId, base64, mimeType, fileName) {
+  return uploadPhotoToDrive_({
+    studentId: studentId,
+    base64: base64,
+    mimeType: 'image/webp',
+    fileName: fileName,
+    kind: 'pgp'
+  }).url;
 }
 
 function generateProperPassId_(sheet, grade, section, schoolYear) {
@@ -499,7 +515,7 @@ function generateProperPassId_(sheet, grade, section, schoolYear) {
 }
 
 function fixMissingPassIds() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getConfiguredSpreadsheet_();
   var sheet = ss.getSheetByName('students');
   var data = sheet.getDataRange().getValues();
   var headers = data[0];

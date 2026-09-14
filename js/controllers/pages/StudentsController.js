@@ -681,7 +681,7 @@ export default class StudentsController {
         // Strip box-shadow before capture to avoid ugly outline in exported image
         const origShadow = captureArea.style.boxShadow;
         captureArea.style.boxShadow = 'none';
-        // The photo lives on Vercel Blob, a different origin. Without useCORS
+        // The photo lives on Google Drive, a different origin. Without useCORS
         // html2canvas requests it without CORS and cannot draw it, so the card
         // downloaded with an empty photo box for exactly those students who
         // had uploaded one. Back when photos were stored as data: URIs this
@@ -762,7 +762,7 @@ export default class StudentsController {
           // Strip box-shadow for clean export
           captureArea.style.boxShadow = 'none';
           // useCORS for the same reason as the single download above: the
-          // photo is served from Vercel Blob and cannot be drawn without it.
+          // photo is served from Google Drive and may need CORS support.
           const canvas = await html2canvas(captureArea, { scale: 3, useCORS: true, logging: false, backgroundColor: null });
           const base64Data = canvas.toDataURL("image/png").replace(/^data:image\/(png|jpg);base64,/, "");
           

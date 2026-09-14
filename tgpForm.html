@@ -576,14 +576,67 @@
     photoPreviewWrap.classList.add('show');
   });
 
+  function convertPhotoToWebP(file, maxWidth, maxHeight, quality) {
+    maxWidth = maxWidth || 800;
+    maxHeight = maxHeight || 800;
+    quality = quality == null ? 0.80 : quality;
+    return new Promise(function(resolve, reject) {
+      var objectUrl = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function() {
+        try {
+          var scale = Math.min(1, maxWidth / img.naturalWidth, maxHeight / img.naturalHeight);
+          var canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(function(blob) {
+            URL.revokeObjectURL(objectUrl);
+            if (!blob) return reject(new Error('Could not convert photo to WebP'));
+            resolve(blob);
+          }, 'image/webp', quality);
+        } catch (err) {
+          URL.revokeObjectURL(objectUrl);
+          reject(err);
+        }
+      };
+      img.onerror = function() { URL.revokeObjectURL(objectUrl); reject(new Error('Could not read photo')); };
+      img.src = objectUrl;
+    });
+  }
+
   async function uploadPhoto(file, studentId) {
-    var res = await fetch('/api/upload-photo?studentId=' + encodeURIComponent(studentId || 'tgp-photo'), {
+    var webpFile = file.type === 'image/webp' && file.size < 500 * 1024
+      ? file
+      : await convertPhotoToWebP(file, 800, 800, 0.80);
+    var dataUrl = await new Promise(function(resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function() { resolve(String(reader.result || '')); };
+      reader.onerror = function() { reject(new Error('Could not prepare the photo for upload.')); };
+      reader.readAsDataURL(webpFile);
+    });
+    var payload = {
+      studentId: String(studentId || 'tgp-photo'),
+      kind: 'tgp',
+      base64: dataUrl,
+      mimeType: 'image/webp',
+      fileName: String(studentId || 'tgp-photo') + '.webp'
+    };
+
+    var endpoint;
+    try {
+      var cfg = await import('./js/config.js');
+      endpoint = cfg.SHEETS_API_URL;
+    } catch (_) {
+      throw new Error('Could not load the application settings.');
+    }
+    var res = await fetch(endpoint + '?action=uploadPhoto', {
       method: 'POST',
-      headers: { 'Content-Type': file.type || 'image/jpeg' },
-      body: file
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
     });
     var json = await res.json();
-    if (!res.ok || !json.url) throw new Error(json.error || 'Upload failed');
+    if (!res.ok || !json.success || !json.url) throw new Error(json.error || 'Upload failed');
     return json.url;
   }
 
@@ -755,7 +808,7 @@
       if (selectedPhotoFile) {
         try {
           btn.textContent = 'Uploading photo…';
-          data.photo = await uploadPhoto(selectedPhotoFile, data.studentId || data.studid || data.name || 'tgp-photo');
+          data.photo = await uploadPhoto(selectedPhotoFile, data.id || data.studentId || data.name || 'tgp-photo');
         } catch (_) {
           // Photo upload is optional — don't block submission
         }

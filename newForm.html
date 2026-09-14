@@ -1037,54 +1037,85 @@
     $("photoProgressBar").style.width = "0%";
   }
 
+  /* Resize + encode before upload so Blob storage only receives compact WebP files. */
+  function convertPhotoToWebP(file, maxWidth, maxHeight, quality) {
+    maxWidth = maxWidth || 800;
+    maxHeight = maxHeight || 800;
+    quality = quality == null ? 0.80 : quality;
+
+    return new Promise(function (resolve, reject) {
+      var objectUrl = URL.createObjectURL(file);
+      var img = new Image();
+
+      img.onload = function () {
+        try {
+          var scale = Math.min(1, maxWidth / img.naturalWidth, maxHeight / img.naturalHeight);
+          var width = Math.max(1, Math.round(img.naturalWidth * scale));
+          var height = Math.max(1, Math.round(img.naturalHeight * scale));
+          var canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(function (blob) {
+            URL.revokeObjectURL(objectUrl);
+            if (!blob) return reject(new Error('Could not convert the photo to WebP.'));
+            resolve(blob);
+          }, 'image/webp', quality);
+        } catch (err) {
+          URL.revokeObjectURL(objectUrl);
+          reject(err);
+        }
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error('Could not read the selected photo.'));
+      };
+      img.src = objectUrl;
+    });
+  }
+
   /* XMLHttpRequest rather than fetch: it is the only way to read real upload
      progress out of the browser. */
-  function uploadPhoto(studentId, file) {
-    return new Promise(function (resolve, reject) {
-      var xhr = new XMLHttpRequest();
-      xhr.open("POST", "/api/upload-photo?studentId=" + encodeURIComponent(studentId));
-      xhr.setRequestHeader("Content-Type", file.type || "image/jpeg");
-
-      xhr.upload.onprogress = function (e) {
-        if (!e.lengthComputable) return;
-        // Held at 99 until the server answers, so 100% never appears while
-        // the photo could still be rejected.
-        var pct = Math.min(99, Math.round((e.loaded / e.total) * 99));
-        setPhotoProgress(pct, "Uploading photo…", "busy");
-      };
-      xhr.upload.onload = function () {
-        setPhotoProgress(null, "Saving photo…", "busy");
-      };
-
-      xhr.onload = function () {
-        var result = null;
-        try {
-          result = JSON.parse(xhr.responseText);
-        } catch (_) { }
-        if (xhr.status >= 200 && xhr.status < 300 && result && result.success) {
-          resolve(result);
-          return;
-        }
-        reject(
-          new Error(
-            (result && result.error) ||
-            "Student photo upload failed (HTTP " + xhr.status + ")."
-          )
-        );
-      };
-      xhr.onerror = function () {
-        reject(
-          new Error(
-            "Could not upload the photo. Check your internet connection and try again."
-          )
-        );
-      };
-      xhr.onabort = function () {
-        reject(new Error("The photo upload was cancelled."));
-      };
-
-      xhr.send(file);
+  async function uploadPhoto(file, studentId) {
+    var webpFile = file.type === 'image/webp' && file.size < 500 * 1024
+      ? file
+      : await convertPhotoToWebP(file, 800, 800, 0.80);
+    var dataUrl = await new Promise(function(resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function() { resolve(String(reader.result || '')); };
+      reader.onerror = function() { reject(new Error('Could not prepare the photo for upload.')); };
+      reader.readAsDataURL(webpFile);
     });
+    var payload = {
+      studentId: String(studentId || 'photo'),
+      kind: 'pgp',
+      base64: dataUrl,
+      mimeType: 'image/webp',
+      fileName: String(studentId || 'photo') + '.webp'
+    };
+
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      return await new Promise(function(resolve, reject) {
+        google.script.run
+          .withSuccessHandler(function(result) {
+            if (!result || !result.success || !result.url) return reject(new Error((result && result.error) || 'Photo upload failed.'));
+            resolve(result);
+          })
+          .withFailureHandler(function(err) { reject(new Error((err && err.message) || 'Photo upload failed.')); })
+          .uploadPhotoToDrive(payload);
+      });
+    }
+
+    var endpoint = await apiEndpoint();
+    var res = await fetch(endpoint + '?action=uploadPhoto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    var json = await res.json();
+    if (!res.ok || !json.success || !json.url) throw new Error(json.error || 'Photo upload failed');
+    return json;
   }
 
   /* ---------- Validation + messages ---------- */
@@ -1435,14 +1466,16 @@
           throw new Error("Attach the student's photo before submitting.");
         }
 
-        var uploadResult = await uploadPhoto($("studid").value.trim(), photoFile);
+        setPhotoProgress(5, "Compressing photo to WebP…", "busy");
+        var webpPhoto = await convertPhotoToWebP(photoFile, 800, 800, 0.80);
+        var uploadResult = await uploadPhoto($("studid").value.trim(), webpPhoto);
 
         setPhotoProgress(100, "Photo uploaded", "done");
 
         data.studentPhoto = {
           url: uploadResult.url,
-          fileName: uploadResult.fileName || photoFile.name,
-          mimeType: uploadResult.contentType || photoFile.type || "image/jpeg"
+          fileName: uploadResult.fileName || ($('studid').value.trim() + '.webp'),
+          mimeType: 'image/webp'
         };
       } catch (photoErr) {
         setPhotoProgress(

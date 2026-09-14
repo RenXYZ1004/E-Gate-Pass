@@ -14,8 +14,9 @@
 // ────────────────────────────────────────────────────────────────
 // WHAT CHANGED FROM THE PREVIOUS VERSION
 // ────────────────────────────────────────────────────────────────
-// 1. PHOTOS NOW SAVE. The browser uploads image bytes to Vercel Blob first,
-//    then this backend writes only the returned public URL to the Photo column.
+// 1. PHOTOS NOW SAVE. The browser converts images to compact WebP, sends them
+//    to this Apps Script backend, and Drive stores the actual file. Sheets stores
+//    only the resulting public image URL in the Photo column.
 //
 // 2. DUPLICATE APPLICATIONS ARE REJECTED.  submitApplication used to append
 //    unconditionally, which is why one Student ID ended up on four rows. It now
@@ -143,6 +144,11 @@ function handleRequest(e) {
 
       case 'submitApplication':
         result = submitApplication(readBody_(e));
+        break;
+
+      // ── PHOTO UPLOAD to Google Drive (WebP only) ──
+      case 'uploadPhoto':
+        result = uploadPhotoToDrive_(readBody_(e));
         break;
 
 
@@ -398,8 +404,8 @@ function submitApplication(data) {
       .trim().replace(/^,\s*/, '');
 
     // ── Photo ────────────────────────────────────────────────
-    // The browser uploads the file bytes to Vercel Blob first. Sheets only
-    // receives and stores the resulting public URL.
+    // The browser uploads compact WebP bytes to Google Drive through this Apps Script
+    // backend. Sheets only receives and stores the resulting public URL.
     var photoUrl = data.studentPhoto && data.studentPhoto.url
       ? String(data.studentPhoto.url).trim()
       : '';
@@ -474,6 +480,41 @@ function findLiveRecord_(sheet, headers, studentId) {
  * Build the next Pass ID for a grade and section, e.g. 26INT09-001.
  * Call this inside a lock — it reads the highest existing number.
  */
+function getPhotoSubfolder_(kind) {
+  var root = DriveApp.getFolderById(PHOTO_FOLDER_ID);
+  var name = String(kind || 'pgp').toLowerCase() === 'tgp' ? 'tgp' : 'pgp';
+  var folders = root.getFoldersByName(name);
+  return folders.hasNext() ? folders.next() : root.createFolder(name);
+}
+
+function uploadPhotoToDrive(data) {
+  return uploadPhotoToDrive_(data);
+}
+
+function uploadPhotoToDrive_(data) {
+  data = data || {};
+  if (!data.studentId) throw new Error('Student ID is required.');
+  if (!data.base64) throw new Error('No photo data received.');
+  if (String(data.mimeType || '').toLowerCase() !== 'image/webp') {
+    throw new Error('Photos must be converted to WebP before upload.');
+  }
+  var kind = String(data.kind || 'pgp').toLowerCase() === 'tgp' ? 'tgp' : 'pgp';
+  var safeId = String(data.studentId).replace(/[\\/:*?"<>|]/g, '').trim().slice(0, 120) || 'photo';
+  var fileName = safeId + '.webp';
+  var folder = getPhotoSubfolder_(kind);
+  var existing = folder.getFilesByName(fileName);
+  while (existing.hasNext()) existing.next().setTrashed(true);
+  var bytes = Utilities.base64Decode(String(data.base64).replace(/^data:image\/webp;base64,/i, ''));
+  var blob = Utilities.newBlob(bytes, 'image/webp', fileName);
+  var file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return { success:true, url:'https://lh3.googleusercontent.com/d/' + file.getId(), fileId:file.getId(), fileName:fileName, mimeType:'image/webp' };
+}
+
+function savePhotoToDrive_(studentId, base64, mimeType, fileName) {
+  return uploadPhotoToDrive_({studentId:studentId, base64:base64, mimeType:'image/webp', fileName:fileName, kind:'pgp'}).url;
+}
+
 function generateProperPassId_(sheet, grade, section, schoolYear) {
   var yy = schoolYear ? String(schoolYear).split('-')[0].slice(-2) : '26';
 
@@ -733,16 +774,16 @@ function testGetAll() {
 
 /**
  * TEST: the photo branch, without writing anything.
- * Proves a Vercel Blob URL is now carried through to the Photo column.
+ * Proves a Google Drive WebP URL is carried through to the Photo column.
  */
 function testPhotoResolution() {
-  var blobStyle = { studentPhoto: { url: 'https://example.public.blob.vercel-storage.com/p.webp', mimeType: 'image/webp' } };
+  var driveStyle = { studentPhoto: { url: 'https://lh3.googleusercontent.com/d/example', mimeType: 'image/webp' } };
   var noPhoto   = { studentPhoto: null };
 
-  var got = blobStyle.studentPhoto && blobStyle.studentPhoto.url ? blobStyle.studentPhoto.url : '';
-  Logger.log('Blob URL   → ' + got);
+  var got = driveStyle.studentPhoto && driveStyle.studentPhoto.url ? driveStyle.studentPhoto.url : '';
+  Logger.log('Drive URL  → ' + got);
   Logger.log('No photo   → "' + (noPhoto.studentPhoto ? '?' : '') + '"');
-  Logger.log(got ? '✅ Blob URLs are stored.' : '❌ Still dropping the photo.');
+  Logger.log(got ? '✅ Drive URLs are stored.' : '❌ Still dropping the photo.');
 }
 
 /**
