@@ -1117,18 +1117,9 @@
       fileName: String(studentId || 'photo') + '.webp'
     };
 
-    if (typeof google !== 'undefined' && google.script && google.script.run) {
-      return await new Promise(function(resolve, reject) {
-        google.script.run
-          .withSuccessHandler(function(result) {
-            if (!result || !result.success || !result.url) return reject(new Error((result && result.error) || 'Photo upload failed.'));
-            resolve(result);
-          })
-          .withFailureHandler(function(err) { reject(new Error((err && err.message) || 'Photo upload failed.')); })
-          .uploadPhotoToDrive(payload);
-      });
-    }
-
+    // Always use the deployed Web App endpoint. Do not use google.script.run here:
+    // when this page is hosted by Apps Script, google.script.run can execute an
+    // older container-bound code version and produce a misleading DriveApp error.
     var endpoint = await apiEndpoint();
     var res = await fetch(endpoint + '?action=uploadPhoto', {
       method: 'POST',
@@ -1509,16 +1500,8 @@
 
       btn.textContent = "Submitting…";
 
-      // Served from inside Apps Script: use the direct call.
-      if (typeof google !== "undefined" && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(function (res) { handleSubmitResult(res, btn); })
-          .withFailureHandler(function (err) { handleSubmitFailure(err, btn); })
-          .submitApplication(data);
-        return;
-      }
-
-      // Served as a static page on the school site: post to the Web App API.
+      // Always submit through the deployed Web App endpoint. This guarantees
+      // registration uses the same current backend as the photo upload.
       try {
         handleSubmitResult(await submitViaApi(data), btn);
       } catch (apiErr) {
