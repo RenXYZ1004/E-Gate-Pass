@@ -54,6 +54,17 @@ var TEXT_COLUMNS = ['ParentMobile', 'StudentID', 'phone'];
 // student who was rejected can re-apply.
 var BLOCKING_STATUSES = ['active', 'for approval', 'suspended'];
 
+// ── Fixed Google resources ───────────────────────────────────
+// Keep these explicit so the Web App does not depend on whichever
+// spreadsheet happens to be bound/active in the Apps Script editor.
+var PHOTO_FOLDER_ID = '1D0XZn5jixNEiL0W2IMz0rau-oikqx_3L';
+var SPREADSHEET_ID = '1goM8RJzzA39pgRbtj9Vuv-glTe8tw_JaAqcF6uuKhm4';
+
+function getConfiguredSpreadsheet_() {
+  return SpreadsheetApp.openById(SPREADSHEET_ID);
+}
+
+
 // ── Web App Entry Points ─────────────────────────────────────
 
 function doGet(e) {
@@ -210,7 +221,7 @@ function normalizeCell_(header, value) {
  * Each object uses the header row as keys.
  */
 function getSheetData(sheetName) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getConfiguredSpreadsheet_();
   var sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
     throw new Error('Sheet tab "' + sheetName + '" not found. Please create it in your spreadsheet.');
@@ -246,7 +257,7 @@ function getAllData() {
     scan_logs: getSheetData('scan_logs'),
     temporary_passes: getSheetData('temporary_passes'),
     users: getSheetData('users'),
-    gates: SpreadsheetApp.getActiveSpreadsheet().getSheetByName('gates') ? getSheetData('gates') : []
+    gates: getConfiguredSpreadsheet_().getSheetByName('gates') ? getSheetData('gates') : []
   };
 }
 
@@ -254,7 +265,7 @@ function getAllData() {
  * Add a new row to a sheet. The object keys must match the header names.
  */
 function addRow(sheetName, obj) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getConfiguredSpreadsheet_();
   var sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
     throw new Error('Sheet tab "' + sheetName + '" not found. Please create it in your spreadsheet.');
@@ -273,7 +284,7 @@ function addRow(sheetName, obj) {
  * Update a single field in a row, found by matching the first column (ID column).
  */
 function updateField(sheetName, id, field, value) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getConfiguredSpreadsheet_();
   var sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
     throw new Error('Sheet tab "' + sheetName + '" not found. Please create it in your spreadsheet.');
@@ -307,7 +318,7 @@ function updateField(sheetName, id, field, value) {
  * Update an entire row by matching the first column (ID column).
  */
 function updateRow(sheetName, obj) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getConfiguredSpreadsheet_();
   var sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
     throw new Error('Sheet tab "' + sheetName + '" not found. Please create it in your spreadsheet.');
@@ -335,7 +346,7 @@ function updateRow(sheetName, obj) {
  * Delete a row by ID (first column match).
  */
 function deleteRow(sheetName, id) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getConfiguredSpreadsheet_();
   var sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
     throw new Error('Sheet tab "' + sheetName + '" not found. Please create it in your spreadsheet.');
@@ -380,7 +391,7 @@ function submitApplication(data) {
   }
 
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getConfiguredSpreadsheet_();
     var sheet = ss.getSheetByName('students');
     if (!sheet) throw new Error('Sheet tab "students" not found.');
 
@@ -553,7 +564,7 @@ function generateProperPassId_(sheet, grade, section, schoolYear) {
  * Replace empty or PGP-timestamp Pass IDs with the proper format.
  */
 function fixMissingPassIds() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getConfiguredSpreadsheet_();
   var sheet = ss.getSheetByName('students');
   var data = sheet.getDataRange().getValues();
   var headers = data[0];
@@ -593,7 +604,7 @@ function fixMissingPassIds() {
  * The pictures themselves are not recoverable — the uploads never completed.
  */
 function cleanupBadPhotoCells() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getConfiguredSpreadsheet_();
   var sheet = ss.getSheetByName('students');
   var data = sheet.getDataRange().getValues();
   var headers = data[0];
@@ -639,7 +650,7 @@ function cleanupBadPhotoCells() {
  * un-leak a password that has already been published.
  */
 function hashPlaintextPasswords() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getConfiguredSpreadsheet_();
   var sheet = ss.getSheetByName('users');
   if (!sheet) throw new Error('Sheet tab "users" not found.');
 
@@ -692,7 +703,7 @@ function sha256Hex_(text) {
  * Run this first if you want to see the damage before changing anything.
  */
 function reportPlaintextPasswords() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getConfiguredSpreadsheet_();
   var sheet = ss.getSheetByName('users');
   if (!sheet) throw new Error('Sheet tab "users" not found.');
 
@@ -721,7 +732,7 @@ function reportPlaintextPasswords() {
  * Read-only — it changes nothing, it just tells you what to merge.
  */
 function reportDuplicateStudents() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getConfiguredSpreadsheet_();
   var sheet = ss.getSheetByName('students');
   var data = sheet.getDataRange().getValues();
   var headers = data[0];
@@ -791,7 +802,7 @@ function testPhotoResolution() {
  * Put a Student ID that already exists in the sheet here.
  */
 function testDuplicateGuard() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getConfiguredSpreadsheet_();
   var sheet = ss.getSheetByName('students');
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
 
