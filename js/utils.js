@@ -38,11 +38,17 @@ export function compressImageToBlob(file, maxWidth = 500, maxHeight = 500, quali
     // URL.createObjectURL only accepts Blob/File/MediaSource. Some browsers
     // can hand us a string/object when a file input is wrapped by another
     // component, so fail cleanly instead of throwing the native overload error.
-    if (!(file instanceof Blob)) {
+    // File objects can come from a different browser realm (iframe / Apps Script
+    // sandbox), in which case `file instanceof Blob` can be false even though it
+    // is a perfectly valid File. Normalize any Blob-like File before using it.
+    if (!file || typeof file.size !== 'number' || typeof file.arrayBuffer !== 'function') {
       reject(new Error('Selected photo is not a valid image file. Please choose the photo again.'));
       return;
     }
-    const objectUrl = URL.createObjectURL(file);
+    const sourceBlob = (file instanceof Blob)
+      ? file
+      : new Blob([file], { type: file.type || 'application/octet-stream' });
+    const objectUrl = URL.createObjectURL(sourceBlob);
     const img = new Image();
 
     img.onload = () => {
@@ -175,7 +181,7 @@ export function hasPhoto(photoValue) {
  * @returns {Promise<string>} The saved Blob URL
  */
 export async function uploadPhotoLocally(studentId, imageBlob, kind = 'pgp') {
-  if (!studentId || !(imageBlob instanceof Blob)) {
+  if (!studentId || !imageBlob || typeof imageBlob.size !== 'number' || typeof imageBlob.arrayBuffer !== 'function') {
     throw new Error('A student ID and image file are required.');
   }
   const webp = imageBlob.type === 'image/webp'

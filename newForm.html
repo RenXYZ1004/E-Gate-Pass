@@ -1044,8 +1044,10 @@
     quality = quality == null ? 0.80 : quality;
 
     return new Promise(function (resolve, reject) {
-      if (!(file instanceof Blob)) { reject(new Error('Selected photo is not a valid image file.')); return; }
-      var objectUrl = URL.createObjectURL(file);
+      if (!file || typeof file.size !== 'number' || typeof file.arrayBuffer !== 'function') { reject(new Error('Selected photo is not a valid image file.')); return; }
+      // Do not use instanceof Blob here: Files can cross the Apps Script/iframe realm.
+      var sourceBlob = (file instanceof Blob) ? file : new Blob([file], { type: file.type || 'application/octet-stream' });
+      var objectUrl = URL.createObjectURL(sourceBlob);
       var img = new Image();
 
       img.onload = function () {
@@ -1469,7 +1471,7 @@
 
         setPhotoProgress(5, "Compressing photo to WebP…", "busy");
         var webpPhoto = await convertPhotoToWebP(photoFile, 800, 800, 0.80);
-        var uploadResult = await uploadPhoto($("studid").value.trim(), webpPhoto);
+        var uploadResult = await uploadPhoto(webpPhoto, $("studid").value.trim());
 
         setPhotoProgress(100, "Photo uploaded", "done");
 

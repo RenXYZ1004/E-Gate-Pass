@@ -146,10 +146,11 @@ export default class StudentsController {
         const file = e.target.files[0];
         if (file) {
           try {
-            if (!(file instanceof Blob)) throw new Error('Selected photo is not a valid image file.');
-            const previewUrl = URL.createObjectURL(file);
+            if (!file || typeof file.size !== 'number' || typeof file.arrayBuffer !== 'function') throw new Error('Selected photo is not a valid image file.');
+            const previewBlob = (file instanceof Blob) ? file : new Blob([file], { type: file.type || 'application/octet-stream' });
+            const previewUrl = URL.createObjectURL(previewBlob);
             document.getElementById('w-photo-preview').innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;">`;
-            controller.tempPhotoData = await compressImageToBlob(file, 500, 500, 0.82);
+            controller.tempPhotoData = await compressImageToBlob(previewBlob, 500, 500, 0.82);
           } catch (err) {
             console.error('Failed to compress image:', err);
             controller.view.showToast('Failed to process image.', 'error');
@@ -166,10 +167,11 @@ export default class StudentsController {
         const file = e.target.files[0];
         if (file) {
           try {
-            if (!(file instanceof Blob)) throw new Error('Selected photo is not a valid image file.');
-            const previewUrl = URL.createObjectURL(file);
+            if (!file || typeof file.size !== 'number' || typeof file.arrayBuffer !== 'function') throw new Error('Selected photo is not a valid image file.');
+            const previewBlob = (file instanceof Blob) ? file : new Blob([file], { type: file.type || 'application/octet-stream' });
+            const previewUrl = URL.createObjectURL(previewBlob);
             document.getElementById('edit-photo-preview').innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;">`;
-            controller.editPhotoData = await compressImageToBlob(file, 500, 500, 0.82);
+            controller.editPhotoData = await compressImageToBlob(previewBlob, 500, 500, 0.82);
           } catch (err) {
             console.error('Failed to compress image:', err);
             controller.view.showToast('Failed to process image.', 'error');

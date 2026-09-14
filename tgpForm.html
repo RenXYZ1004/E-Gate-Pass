@@ -571,8 +571,9 @@
     }
     selectedPhotoFile = file;
     photoFileName.textContent = file.name;
-    if (!(file instanceof Blob)) { alert('The selected photo could not be read. Please choose the photo again.'); return; }
-    photoPreviewImg.src = URL.createObjectURL(file);
+    if (!file || typeof file.size !== 'number' || typeof file.arrayBuffer !== 'function') { alert('The selected photo could not be read. Please choose the photo again.'); return; }
+    var previewBlob = (file instanceof Blob) ? file : new Blob([file], { type: file.type || 'application/octet-stream' });
+    photoPreviewImg.src = URL.createObjectURL(previewBlob);
     photoPlaceholder.style.display = 'none';
     photoPreviewWrap.classList.add('show');
   });
@@ -582,8 +583,9 @@
     maxHeight = maxHeight || 800;
     quality = quality == null ? 0.80 : quality;
     return new Promise(function(resolve, reject) {
-      if (!(file instanceof Blob)) { reject(new Error('Selected photo is not a valid image file.')); return; }
-      var objectUrl = URL.createObjectURL(file);
+      if (!file || typeof file.size !== 'number' || typeof file.arrayBuffer !== 'function') { reject(new Error('Selected photo is not a valid image file.')); return; }
+      var sourceBlob = (file instanceof Blob) ? file : new Blob([file], { type: file.type || 'application/octet-stream' });
+      var objectUrl = URL.createObjectURL(sourceBlob);
       var img = new Image();
       img.onload = function() {
         try {
