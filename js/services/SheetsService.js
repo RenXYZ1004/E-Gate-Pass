@@ -50,7 +50,9 @@ export default class SheetsService {
 
   // ── Bulk fetch (single network call for ALL data) ─────────
   static async getAll() {
-    return this.get('getAll');
+    if (this._getAllPromise) return this._getAllPromise;
+    this._getAllPromise = this.get('getAll').finally(() => { this._getAllPromise = null; });
+    return this._getAllPromise;
   }
 
   // ── Students ──────────────────────────────────────────────

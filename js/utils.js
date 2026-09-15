@@ -202,11 +202,14 @@ export async function uploadPhotoLocally(studentId, imageBlob, kind = 'pgp') {
   });
   let json = {};
   try { json = await res.json(); } catch (_) {}
-  if (!res.ok || !json.success || !json.url) {
-    throw new Error(json.error || `Photo upload failed (HTTP ${res.status}).`);
+  // Apps Script returns the standard API envelope: { success: true, data: { url: ... } }.
+  // Accept the legacy top-level url too so both deployed backend versions remain compatible.
+  const savedUrl = (json && json.data && json.data.url) || json.url || '';
+  if (!res.ok || !json.success || !savedUrl) {
+    throw new Error(json.error || (json.data && json.data.error) || `Photo upload failed (HTTP ${res.status}).`);
   }
-  console.log(`[PhotoUpload] Saved WebP to Google Drive: ${json.url}`);
-  return json.url;
+  console.log(`[PhotoUpload] Saved WebP to Google Drive: ${savedUrl}`);
+  return savedUrl;
 }
 
 function blobToBase64(blob) {

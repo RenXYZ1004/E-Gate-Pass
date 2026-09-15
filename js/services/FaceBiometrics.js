@@ -29,11 +29,28 @@ class FaceBiometrics {
 
     this.loading = true;
     try {
-      // face-api.js is loaded as a global script in index.html
+      // face-api.js is intentionally lazy-loaded: it is a large dependency and
+      // most users never open face scanning. Load it only when this service is used.
       if (typeof faceapi === 'undefined') {
-        console.error('[FaceBiometrics] face-api.js library not found. Ensure the script tag is in index.html.');
-        this.loading = false;
-        return false;
+        await new Promise((resolve, reject) => {
+          const existing = document.querySelector('script[data-face-api-loader]');
+          if (existing) {
+            existing.addEventListener('load', resolve, { once: true });
+            existing.addEventListener('error', reject, { once: true });
+            return;
+          }
+          const script = document.createElement('script');
+          script.src = './js/lib/face-api.min.js';
+          script.async = true;
+          script.dataset.faceApiLoader = '1';
+          script.onload = resolve;
+          script.onerror = () => reject(new Error('Could not load face recognition library.'));
+          document.head.appendChild(script);
+        });
+      }
+
+      if (typeof faceapi === 'undefined') {
+        throw new Error('face-api.js library did not initialize.');
       }
 
       console.log('[FaceBiometrics] Loading AI models...');

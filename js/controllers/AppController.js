@@ -616,11 +616,20 @@ export default class AppController {
       if (playPromise && typeof playPromise.catch === 'function') {
         playPromise.catch(err => console.warn('Video play interrupted:', err.name));
       }
-      this.scannerActive = true;
-      this.scanCtx = null;          // canvas is re-sized for the new stream
-      this.lastDecodeAt = 0;
-      this.resetCameraIdleTimeout();
-      requestAnimationFrame(() => this.tickCamera());
+      // jsQR is used only by the gate scanner. Keep it out of the initial
+      // application download, then load it while the camera preview starts.
+      loadScriptOnce('./js/lib/jsQR.min.js', 'jsQR')
+        .then(() => {
+          this.scannerActive = true;
+          this.scanCtx = null;
+          this.lastDecodeAt = 0;
+          this.resetCameraIdleTimeout();
+          requestAnimationFrame(() => this.tickCamera());
+        })
+        .catch(err => {
+          console.error('QR scanner library error:', err);
+          this.view.showToast('QR scanner could not be loaded.', 'error');
+        });
     };
 
     const onFinalError = (err) => {

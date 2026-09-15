@@ -11,7 +11,7 @@
 //     no longer abort the whole install (cache.addAll is all-or-nothing).
 // ════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'pgp-cache-v1.4.5';
+const CACHE_NAME = 'pgp-cache-v1.4.6';
 
 // Files that make up the app shell — always revalidated against the network.
 //
@@ -124,6 +124,10 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
+
+  // Browser extensions can issue requests with chrome-extension:// (or other
+  // non-web schemes). A page service worker must never try to cache those.
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
 
   // Never intercept the Sheets backend or the Apps Script application form.
   if (url.hostname.includes('script.google.com')) return;
