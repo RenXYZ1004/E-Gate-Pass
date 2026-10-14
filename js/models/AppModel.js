@@ -66,6 +66,19 @@ function withoutInlinePhotos(students) {
   });
 }
 
+// Normalize user profiles from Google Sheets and old browser sessions. Some
+// legacy user rows have a username but no display name; preserve those sessions
+// and use the username as the visible name instead of crashing the dashboard.
+function normalizeUserProfile(profile) {
+  if (!profile || typeof profile !== 'object' || Array.isArray(profile)) return null;
+  const username = String(profile.username || profile.userName || '').trim();
+  const name = String(
+    profile.name || profile.displayName || profile.fullName || username || 'User'
+  ).trim() || 'User';
+  const role = String(profile.role || '').trim().toLowerCase();
+  return { ...profile, username, name, role };
+}
+
 export default class AppModel {
   constructor() {
     // Load cached data from localStorage (instant load)
@@ -77,7 +90,7 @@ export default class AppModel {
     this.emailQueue = readCache('pgp_email_queue', []);
 
     // Session management
-    const profile = readCache('pgp_session', null);
+    const profile = normalizeUserProfile(readCache('pgp_session', null));
     const browserAlive = sessionStorage.getItem('pgp_browser_alive');
     this.currentUser = (profile && browserAlive) ? profile : null;
     if (profile && !browserAlive) localStorage.removeItem('pgp_session');
@@ -637,14 +650,18 @@ export default class AppModel {
     );
 
     if (user) {
-      const userPayload = {
+      const userPayload = normalizeUserProfile({
         username: user.username,
-        name: user.name,
+        name: user.name || user.displayName || user.fullName,
         role: user.role,
         gate: user.gate || '',
         loginTime: new Date().toISOString(),
         lastActivity: Date.now()
-      };
+      });
+      if (!userPayload || !userPayload.username || !userPayload.role) {
+        console.error('[AppModel] Refusing login: user record is missing a username or role.');
+        return null;
+      }
       this.currentUser = userPayload;
       localStorage.setItem('pgp_session', JSON.stringify(userPayload));
       sessionStorage.setItem('pgp_browser_alive', '1');
@@ -654,6 +671,10 @@ export default class AppModel {
   }
 
   login(userPayload) {
+    userPayload = normalizeUserProfile(userPayload);
+    if (!userPayload || !userPayload.username || !userPayload.role) {
+      throw new Error('Cannot start a session: the user profile is missing a username or role.');
+    }
     userPayload.loginTime = new Date().toISOString();
     userPayload.lastActivity = Date.now();
     this.currentUser = userPayload;

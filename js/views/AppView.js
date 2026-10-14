@@ -111,14 +111,22 @@ export default class AppView {
     const foot = document.querySelector('.sidebar-foot');
     if(foot) foot.style.display = 'block';
 
+    // Older or incomplete user records may not contain `name` (or `role`).
+    // Never let optional profile fields crash the entire app shell.
+    const user = model.currentUser;
+    const displayName = String(
+      user.name || user.displayName || user.fullName || user.username || 'User'
+    ).trim() || 'User';
+    const roleLabel = String(user.role || 'User').trim() || 'User';
+
     const avatar = document.getElementById('user-avatar');
-    if (avatar) avatar.textContent = model.currentUser.name.substring(0, 1).toUpperCase();
-    
+    if (avatar) avatar.textContent = displayName.slice(0, 1).toUpperCase();
+
     const uname = document.getElementById('user-name');
-    if (uname) uname.textContent = model.currentUser.name;
-    
+    if (uname) uname.textContent = displayName;
+
     const urole = document.getElementById('user-role');
-    if (urole) urole.textContent = model.currentUser.role.toUpperCase();
+    if (urole) urole.textContent = roleLabel.toUpperCase();
 
     const logoutIcon = document.getElementById('logout-icon');
     if (logoutIcon) logoutIcon.innerHTML = Icons['log-out'](14);
@@ -133,10 +141,12 @@ export default class AppView {
 
     if (!model.currentUser) {
       inner.innerHTML = '';
-      document.getElementById('bottom-nav').style.display = 'none';
+      const bottomNav = document.getElementById('bottom-nav');
+      if (bottomNav) bottomNav.style.display = 'none';
       return;
     }
-    document.getElementById('bottom-nav').style.display = '';
+    const bottomNav = document.getElementById('bottom-nav');
+    if (bottomNav) bottomNav.style.display = '';
 
     const permissions = ROLE_PERMISSIONS[model.currentUser.role] || [];
     const allItems = NAV_SECTIONS.flatMap(s => s.items).filter(item => permissions.includes(item.id));

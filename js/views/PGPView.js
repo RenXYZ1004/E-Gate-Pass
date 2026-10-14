@@ -157,6 +157,8 @@ export default class PGPView {
       if (p.status === 'revoked') badgeStyle = 'background: var(--red-s); color: var(--red);';
       if (p.status === 'active') badgeStyle = 'background: var(--green-s); color: var(--green);';
 
+      const passName = String(p.name || p.studentName || p.studid || 'Unknown Student');
+
       return `
         <tr data-status="${escapeHTML(p.status)}">
           <td style="text-align: center;">
@@ -171,7 +173,7 @@ export default class PGPView {
                 ${hasPhoto(p.photo) ? `<img src="${escapeHTML(resolvePhotoUrl(p.photo))}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">` : escapeHTML(p.name.substring(0, 2).toUpperCase())}
               </div>
               <div>
-                <div style="font-weight: 600;">${escapeHTML(p.name)}</div>
+                <div style="font-weight: 600;">${escapeHTML(passName)}</div>
                 <div style="font-size: 11px; color: var(--text3);">${escapeHTML(p.studid || p.id)}</div>
               </div>
             </div>

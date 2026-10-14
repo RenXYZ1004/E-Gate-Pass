@@ -257,7 +257,7 @@ export default class TGPController {
         if (!tgp) return;
 
         const student = controller.model.getStudentByPassId(tgp.studentId) || controller.model.getStudentByStudId(tgp.studentId);
-        const sName = tgp.name || (student ? student.name : 'Unknown Student');
+        const sName = String(tgp.name || (student && student.name) || 'Unknown Student');
         const sGrade = (tgp.grade ? `${tgp.grade}${tgp.section ? ' - ' + tgp.section : ''}` : '') || (student ? `${student.grade}${student.section ? ' - ' + student.section : ''}` : '');
         const dateStr = new Date(tgp.validDate).toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' });
 
