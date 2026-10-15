@@ -58,9 +58,9 @@
       position: fixed;
       inset: 0;
       z-index: 500;
-      background: rgba(0, 0, 0, 0.72);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(28, 20, 38, 0.42);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -76,19 +76,20 @@
     }
 
     .modal {
-      background: rgba(14, 9, 26, 0.97);
-      backdrop-filter: blur(32px);
-      -webkit-backdrop-filter: blur(32px);
+      background: #ffffff;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       border: 1px solid var(--line);
-      border-radius: 24px;
-      padding: 42px;
+      box-shadow: 0 24px 80px rgba(34, 18, 52, 0.18);
+      border-radius: 18px;
+      padding: 36px;
       width: 100%;
       max-width: 460px;
       max-height: 90vh;
       overflow-y: auto;
       position: relative;
-      transform: translateY(28px) scale(0.97);
-      transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform: translateY(12px);
+      transition: transform 0.22s ease;
     }
 
     .modal-backdrop.open .modal {
@@ -115,9 +116,9 @@
       width: 32px;
       height: 32px;
       border-radius: 8px;
-      background: rgba(255, 255, 255, 0.04);
+      background: #f7f4fa;
       border: 1px solid var(--line);
-      color: var(--faint);
+      color: var(--muted);
       font-size: 16px;
       cursor: pointer;
       display: flex;
@@ -128,16 +129,16 @@
     }
 
     .modal-close:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: var(--paper);
+      background: var(--purple-soft);
+      color: var(--ink);
     }
 
     .modal-icon {
       width: 58px;
       height: 58px;
       border-radius: 16px;
-      background: rgba(66, 36, 103, 0.12);
-      border: 1px solid rgba(66, 36, 103, 0.3);
+      background: #f2ecf8;
+      border: 1px solid #e2d6ef;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -148,7 +149,7 @@
     .modal-title {
       font-size: 22px;
       font-weight: 800;
-      color: var(--paper);
+      color: var(--ink);
       margin-bottom: 6px;
     }
 
@@ -177,9 +178,9 @@
       width: 100%;
       padding: 11px 14px;
       border-radius: 10px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1.5px solid rgba(255, 255, 255, 0.07);
-      color: var(--paper);
+      background: #ffffff;
+      border: 1.5px solid #ded6e8;
+      color: var(--ink);
       font-size: 14px;
       font-family: inherit;
       outline: none;
@@ -187,8 +188,8 @@
     }
 
     .form-input:focus {
-      border-color: var(--teal);
-      box-shadow: 0 0 0 3px rgba(0, 229, 200, 0.1);
+      border-color: var(--purple-l);
+      box-shadow: 0 0 0 3px rgba(83, 43, 120, 0.10);
     }
 
     .form-input::placeholder {
@@ -237,9 +238,9 @@
       gap: 10px;
       padding: 11px 14px;
       border-radius: 10px;
-      background: rgba(239, 68, 68, 0.08);
-      border: 1px solid rgba(239, 68, 68, 0.25);
-      color: #f87171;
+      background: #fff1f1;
+      border: 1px solid #f4caca;
+      color: #a62e37;
       font-size: 13px;
       font-weight: 500;
       margin-bottom: 18px;
@@ -250,9 +251,9 @@
     }
 
     .login-error.is-notice {
-      background: rgba(0, 229, 200, 0.07);
-      border-color: rgba(0, 229, 200, 0.25);
-      color: #5eead4;
+      background: #effaf5;
+      border-color: #b8e3cf;
+      color: #176b4a;
     }
 
     @keyframes shake {
@@ -286,22 +287,22 @@
     .btn-login-submit {
       width: 100%;
       padding: 14px;
-      border-radius: 100px;
-      background: linear-gradient(135deg, var(--purple-l), var(--purple));
-      color: var(--paper);
+      border-radius: 8px;
+      background: var(--purple);
+      color: #ffffff;
       font-size: 15px;
       font-weight: 700;
       font-family: inherit;
       cursor: pointer;
       border: none;
       margin-top: 6px;
-      box-shadow: 0 6px 26px rgba(66, 36, 103, 0.4);
+      box-shadow: 0 5px 14px rgba(66, 36, 103, 0.16);
       transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
     }
 
     .btn-login-submit:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 10px 34px rgba(66, 36, 103, 0.55);
+      box-shadow: 0 8px 20px rgba(66, 36, 103, 0.22);
     }
 
     .btn-login-submit:disabled {
@@ -319,89 +320,14 @@
       border-top: 1px solid var(--line);
     }
 
-    /* ── CARD SHOWCASE ── */
-    .showcase {
-      padding: 0 0 30px;
-    }
-
-    .cards-row {
-      display: flex;
-      gap: 36px;
-      justify-content: center;
-      flex-wrap: wrap;
-      max-width: 760px;
-      margin: 0 auto;
-    }
-
-    .pgp-card {
-      width: 320px;
-      border-radius: 20px;
-      overflow: hidden;
-      position: relative;
-      cursor: default;
-      border: 1px solid var(--line);
-      transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
-    }
-
-    .pgp-card:hover {
-      transform: translateY(-10px);
-      border-color: rgba(0, 229, 200, 0.3);
-      box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
-    }
-
-    .pgp-card img {
-      width: 100%;
-      display: block;
-    }
-
-    .pgp-card-label {
-      position: absolute;
-      bottom: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(10, 7, 20, 0.88);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--line);
-      border-radius: 100px;
-      padding: 4px 16px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--teal);
-      letter-spacing: 0.06em;
-      white-space: nowrap;
-    }
 
     @media (max-width: 640px) {
-      .modal {
-        padding: 28px 22px;
-      }
-
-      .pgp-card {
-        width: 280px;
-      }
+      .modal { padding: 28px 22px; }
     }
   </style>
 </head>
 
 <body>
-
-  <!-- Ambient backdrop -->
-  <div class="aurora" aria-hidden="true">
-    <span class="a1"></span>
-    <span class="a2"></span>
-    <span class="a3"></span>
-    <i class="d1"></i>
-    <i class="d2"></i>
-  </div>
-
-  <!-- Pointer spotlight -->
-  <div class="spotlight" id="spotlight" aria-hidden="true"></div>
-
-  <!-- Noise grain -->
-  <div class="grain" aria-hidden="true"></div>
-
-  <!-- Scroll progress bar -->
-  <div class="progress" aria-hidden="true"></div>
 
   <!-- ═══ HEADER ═══ -->
   <header class="nav" role="banner">
@@ -410,12 +336,12 @@
         <img src="SISC_logo.webp" alt="Southville International School and Colleges logo" width="84" height="84" decoding="async">
       </div>
       <div class="brand-text">
-        <span class="brand-name">e-Gatepass</span>
-        <span class="brand-sy">SISC &bull; <span data-school-year-label>SY 2026–2027</span></span>
+        <span class="brand-name">SISC e-Gatepass</span>
+        <span class="brand-sy">Southville International School and Colleges · <span data-school-year-label>SY 2026–2027</span></span>
       </div>
     </a>
     <nav class="nav-actions" aria-label="Main navigation">
-      <a href="tgpForm.html" class="btn btn-line apply-short" aria-label="Request Temporary Pass" style="font-size:13px;">
+      <a href="tgpForm.html" class="btn btn-line apply-short" aria-label="Request Temporary Pass">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/>
@@ -433,14 +359,14 @@
         </svg>
         <span>Apply Now</span>
       </a>
-      <button class="btn btn-line" id="btn-open-login" aria-haspopup="dialog">
+      <button class="btn btn-line" id="btn-open-login" aria-label="Staff Login" aria-haspopup="dialog">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
           <polyline points="10 17 15 12 10 7" />
           <line x1="15" y1="12" x2="3" y2="12" />
         </svg>
-        Staff Login
+        <span>Staff Login</span>
       </button>
     </nav>
   </header>
@@ -449,99 +375,79 @@
   <main>
 
     <!-- ── HERO ── -->
-    <section class="hero">
-      <div class="seal-stage" aria-hidden="true">
-        <div class="seal-plate">
-          <img src="SISC_logo.webp" alt="Southville International School and Colleges seal" width="84" height="84" decoding="async">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="shell hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span> Official SISC portal</p>
+          <p class="hero-school-year">School year · <span data-school-year-label>SY 2026–2027</span></p>
+          <h1 id="hero-title">Your school gatepass, <span>made simpler.</span></h1>
+          <p class="hero-sub">
+            Apply for a permanent gatepass or request a temporary pass online. Faculty can verify passes with QR scanning at school gates, supporting a clearer and more organized exit process.
+          </p>
+
+          <div class="hero-actions">
+            <a href="newForm.html" class="btn btn-solid btn-lg">
+              Apply for a permanent pass
+              <svg class="arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+              </svg>
+            </a>
+            <a href="tgpForm.html" class="btn btn-line btn-lg">
+              Request a temporary pass
+            </a>
+          </div>
+          <p class="hero-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/></svg> For students and families · Staff access is available above</p>
         </div>
-      </div>
 
-      <p class="eyebrow">Now accepting applications &bull; <span data-school-year-label>SY 2026–2027</span></p>
-      <h1>Digital Gatepass System</h1>
-      <p class="hero-sub">
-        Apply for your Permanent Gatepass online — fast, secure, and paperless.
-        Verified by QR code at every school gate, every single day.
-      </p>
-
-      <div class="hero-actions">
-        <a href="newForm.html" class="btn btn-solid btn-lg">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="12" y1="18" x2="12" y2="12" />
-            <line x1="9" y1="15" x2="15" y2="15" />
-          </svg>
-          Apply for Gatepass
-          <svg class="arr" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="5" y1="12" x2="19" y2="12" />
-            <polyline points="12 5 19 12 12 19" />
-          </svg>
-        </a>
-        <a href="tgpForm.html" class="btn btn-line btn-lg">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
-          Request Temporary Pass
-        </a>
-      </div>
-
-      <div class="scroll-hint" aria-hidden="true">
-        <i></i>
-        Scroll to explore
+        <aside class="hero-panel" aria-label="e-Gatepass portal overview">
+          <div class="hero-panel-heading">
+            <span class="panel-mark"><img src="SISC_logo.webp" alt="" width="36" height="36" decoding="async"></span>
+            <div><span class="panel-overline">THE SISC PORTAL</span><h2>A clear process from request to gate.</h2></div>
+          </div>
+          <div class="portal-steps">
+            <div class="portal-step">
+              <span class="portal-step-icon" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h6"/></svg></span>
+              <span><strong>Apply online</strong><small>Submit a permanent pass application.</small></span>
+              <span class="portal-step-number">01</span>
+            </div>
+            <div class="portal-step">
+              <span class="portal-step-icon" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m9 15 2 2 4-4"/></svg></span>
+              <span><strong>School review</strong><small>Applications are reviewed by the school.</small></span>
+              <span class="portal-step-number">02</span>
+            </div>
+            <div class="portal-step">
+              <span class="portal-step-icon" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3z"/><path d="M14 14h3v3h-3zM20 14v2M17 20h4M20 18v3"/></svg></span>
+              <span><strong>QR verification</strong><small>Faculty scan the pass at the gate.</small></span>
+              <span class="portal-step-number">03</span>
+            </div>
+          </div>
+          <div class="hero-panel-footer"><span class="status-dot" aria-hidden="true"></span> One portal for permanent and temporary passes</div>
+        </aside>
       </div>
     </section>
-
-    <!-- ── MARQUEE ── -->
-    <div class="marquee" aria-hidden="true">
-      <div class="marquee-track">
-        <span>Permanent Gatepass</span>
-        <span>QR Verified</span>
-        <span>Biometric Ready</span>
-        <span>Cloud Synced</span>
-        <span>Offline Capable</span>
-        <span>Parent Alerts</span>
-        <span>Role-Based Access</span>
-        <span>Paperless Process</span>
-        <!-- duplicate for seamless loop -->
-        <span>Permanent Gatepass</span>
-        <span>QR Verified</span>
-        <span>Biometric Ready</span>
-        <span>Cloud Synced</span>
-        <span>Offline Capable</span>
-        <span>Parent Alerts</span>
-        <span>Role-Based Access</span>
-        <span>Paperless Process</span>
-      </div>
-    </div>
 
     <!-- ── HOW IT WORKS ── -->
     <section>
       <div class="shell">
-        <div class="sec-head center reveal">
+        <div class="sec-head center">
           <p class="eyebrow center">Process</p>
           <h2>How It Works</h2>
-          <p>Three simple steps to get your official permanent gatepass reviewed and approved.</p>
+          <p>A straightforward process for submitting, reviewing, and receiving a permanent gatepass.</p>
         </div>
 
         <div class="steps">
-          <div class="step reveal" data-delay="0">
+          <div class="step">
             <span class="step-no">01</span>
             <h3>Submit Your Application</h3>
-            <p>Fill out the online form with your student details and guardian contact information. It only takes a
-              minute.</p>
+            <p>Complete the online form with the student details and guardian contact information requested by the school.</p>
           </div>
-          <div class="step reveal" data-delay="0.12">
+          <div class="step">
             <span class="step-no">02</span>
             <h3>Admin Review</h3>
             <p>The school admin reviews your application. You will be notified by email once it has been reviewed and a
               decision is made.</p>
           </div>
-          <div class="step reveal" data-delay="0.24">
+          <div class="step">
             <span class="step-no">03</span>
             <h3>Receive Your Gatepass</h3>
             <p>Once approved, your digital gatepass with a unique QR code is issued — ready to use at all school gate
@@ -551,60 +457,15 @@
       </div>
     </section>
 
-    <!-- ── GATEPASS SAMPLES ── -->
-    <section class="tight showcase">
-      <div class="shell">
-        <div class="sec-head center reveal" style="margin-bottom:38px;">
-          <p class="eyebrow center">Gatepass Design</p>
-          <h2>What Your Gatepass Looks Like</h2>
-          <p style="color:var(--muted);">A smart ID card with your student information and a unique QR code — scanned at
-            every gate for instant, contactless verification.</p>
-        </div>
-        <div class="cards-row">
-          <div class="pgp-card reveal" data-delay="0">
-            <picture><source srcset="PGP_Card_1784540906451.webp" type="image/webp"><img src="PGP_Card_1784540906451.png" alt="Sample permanent gate pass card design A" width="900" height="1425" loading="lazy" decoding="async"></picture>
-            <div class="pgp-card-label">&#10022; Sample Gatepass — Design A</div>
-          </div>
-          <div class="pgp-card reveal" data-delay="0.12">
-            <picture><source srcset="PGP_Card_1784609066593.webp" type="image/webp"><img src="PGP_Card_1784609066593.png" alt="Sample permanent gate pass card design B" width="900" height="1587" loading="lazy" decoding="async"></picture>
-            <div class="pgp-card-label">&#10022; Sample Gatepass — Design B</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── STATS ── -->
-    <section class="tight">
-      <div class="shell">
-        <div class="sec-head center reveal">
-          <p class="eyebrow center">By the Numbers</p>
-          <h2>Trusted by the Southville Community</h2>
-        </div>
-        <div class="stats">
-          <div class="stat reveal" data-delay="0">
-            <b data-count="1200">0</b>
-            <span>Students Enrolled</span>
-          </div>
-          <div class="stat reveal" data-delay="0.1">
-            <b data-count="99">0</b>
-            <span>% Gate Clearance Rate</span>
-          </div>
-          <div class="stat reveal" data-delay="0.2">
-            <b data-count="4">0</b>
-            <span>Gate Checkpoints</span>
-          </div>
-        </div>
-      </div>
-    </section>
 
     <!-- ── CTA ── -->
     <section class="tight">
       <div class="shell">
-        <div class="cta-wrap reveal">
+        <div class="cta-wrap">
           <div class="cta-card">
-            <p class="eyebrow center">Get Started Today</p>
-            <h2>Apply for a Gatepass or Request a Temporary Pass</h2>
-            <p>Submit a Permanent Gatepass application online, or request a one-day Temporary Gate Pass for special exit needs. Both are fast, digital, and paperless.</p>
+            <p class="eyebrow center">Get started</p>
+            <h2>Choose the pass you need</h2>
+            <p>Start a permanent gatepass application or request a temporary pass for a specific need. Choose the relevant form to continue.</p>
             <div class="cta-actions">
               <a href="newForm.html" class="btn btn-solid btn-lg">
                 Apply for Gatepass
@@ -660,10 +521,9 @@
 
   <!-- ═══ FOOTER ═══ -->
   <footer>
-    <div style="display:flex;align-items:center;gap:9px;">
-      <img src="SISC_logo.webp" alt="Southville International School and Colleges logo" width="22" height="22" loading="lazy" decoding="async"
-        style="width:22px;height:22px;object-fit:contain;border-radius:5px;background:#fff;padding:2px;">
-      SISC e-Gatepass System
+    <div class="footer-brand">
+      <img src="SISC_logo.webp" alt="Southville International School and Colleges logo" width="22" height="22" loading="lazy" decoding="async">
+      <span>SISC e-Gatepass System</span>
     </div>
     <nav class="footer-links" aria-label="Footer navigation">
       <a href="#contact">Contact</a>
@@ -906,7 +766,7 @@
       loginError.classList.add('show', 'is-notice');
     })();
   </script>
-  <script src="js/landing.js"></script>
+  <script defer src="js/landing.js"></script>
   <script defer src="js/contact.js"></script>
   <script defer src="js/analytics-consent.js"></script>
 </body>
