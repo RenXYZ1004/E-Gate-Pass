@@ -151,6 +151,84 @@
   .fg {
     margin-bottom: 14px;
   }
+
+  /* Official Permanent Gate Pass guidelines and mandatory acknowledgment. */
+  .guidelines-card {
+    border-top: 4px solid var(--purple);
+    background: linear-gradient(180deg, #ffffff 0%, #fcfbff 100%);
+  }
+  .guidelines-intro {
+    margin: -3px 0 14px;
+    color: var(--text2);
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+  .guideline-list {
+    margin: 0;
+    padding-left: 25px;
+  }
+  .guideline-list li {
+    padding-left: 4px;
+    margin: 0 0 11px;
+    color: var(--text);
+    font-size: 12.7px;
+    line-height: 1.6;
+  }
+  .guideline-list li:last-child { margin-bottom: 0; }
+  .guideline-list li::marker {
+    color: var(--purple);
+    font-weight: 800;
+  }
+  .guideline-window-note {
+    margin-top: 15px;
+    padding: 10px 12px;
+    border: 1px solid #e5def2;
+    border-radius: 8px;
+    background: #f7f3fc;
+    color: var(--purple);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .acknowledgment-box {
+    margin: 14px 0 12px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: #fbfaff;
+  }
+  .acknowledgment-box.invalid {
+    border-color: var(--red);
+    background: #fffafa;
+  }
+  .acknowledgment-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0;
+    cursor: pointer;
+    font-size: 12.5px;
+    line-height: 1.6;
+    font-weight: 600;
+  }
+  .acknowledgment-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    margin: 2px 0 0;
+    accent-color: var(--purple);
+    cursor: pointer;
+  }
+  .acknowledgment-label span { min-width: 0; }
+  .acknowledgment-caption {
+    margin: 0 0 10px;
+    color: var(--text2);
+    font-size: 11.5px;
+    line-height: 1.5;
+  }
+  @media (max-width: 420px) {
+    .guidelines-card, .acknowledgment-box { padding: 14px; }
+    .guideline-list li { font-size: 12.3px; }
+  }
   label {
     display: block;
     font-size: 13px;
@@ -512,6 +590,25 @@
   <div id="topMsg"></div>
 
   <form id="pgpForm" novalidate>
+    <section class="card guidelines-card" aria-labelledby="pgp-guidelines-title">
+      <h2 id="pgp-guidelines-title">Permanent Gate Pass Guidelines — AY 2026–2027</h2>
+      <p class="guidelines-intro">
+        Please read the following rules carefully before completing the Permanent Gate Pass (E-PGP) application.
+      </p>
+      <ol class="guideline-list" type="A">
+        <li>Commencing Academic Year 2026–2027, an Electronic Permanent Gate Pass (E-PGP) with a special QR code will be issued. The pass must be presented to the duty guard solely during dismissal times.</li>
+        <li>The Permanent Gate Pass must not be used to leave campus to dine at nearby establishments such as McDonald’s, 7-Eleven, or any other shops or restaurants with the intention of returning to the SISC premises.</li>
+        <li>The pass is intended only for departing the school premises. It must not be used to re-enter the school after leaving campus, including after visiting a friend’s house or for any other purpose.</li>
+        <li>SISC reserves the right to void or cancel a Permanent Gate Pass if it is used without authorization. Such misuse may result in appropriate sanctions or disciplinary action.</li>
+        <li>The Permanent Gate Pass is valid from August 2026 through July 2027, unless it is suspended earlier.</li>
+        <li>If a parent or guardian needs to change the student’s departure arrangement for a particular day, an email or text message must be sent to the Homeroom Adviser or Discipline Officer before the student leaves. For example, this applies when the student plans to ride with a friend that day.</li>
+        <li>Applications for the AY 2026–2027 Permanent Gate Pass will remain open until December 2026.</li>
+      </ol>
+      <div class="guideline-window-note">
+        <strong>Important:</strong> A Permanent Gate Pass is for authorized dismissal departures only. It is not permission to leave campus during the school day and return later.
+      </div>
+    </section>
+
     <div class="card">
       <h2>Student Information</h2>
 
@@ -758,6 +855,16 @@
       </div>
     </div>
 
+    <section class="acknowledgment-box" id="guidelinesAcknowledgmentBox" aria-labelledby="guidelines-ack-title">
+      <h2 id="guidelines-ack-title" style="margin:0 0 8px;font-size:13px;color:var(--purple);">Parent/Guardian Acknowledgment <span class="req">*</span></h2>
+      <p class="acknowledgment-caption">A parent or guardian must confirm this acknowledgment before the application can be submitted.</p>
+      <label class="acknowledgment-label" for="guidelinesAcknowledged">
+        <input type="checkbox" id="guidelinesAcknowledged" required aria-describedby="err-guidelinesAcknowledged" />
+        <span>By filling up this online form, I/we understand and have read the guidelines in allowing my/our child to secure a Permanent Gate Pass for AY 2026–2027.</span>
+      </label>
+      <div class="field-error" id="err-guidelinesAcknowledged">Please confirm that you have read and understood the Permanent Gate Pass guidelines.</div>
+    </section>
+
     <button type="submit" class="submit-btn" id="submitBtn">
       Submit Application
     </button>
@@ -914,6 +1021,12 @@
   }
   wireGroup("gateGroup", "err-gate");
   wireGroup("arrGroup", "err-arr");
+  $("guidelinesAcknowledged").addEventListener("change", function () {
+    if (this.checked) {
+      $("guidelinesAcknowledgmentBox").classList.remove("invalid");
+      $("err-guidelinesAcknowledged").classList.remove("show");
+    }
+  });
 
   function checkedValues(groupId) {
     return Array.prototype.slice
@@ -1195,6 +1308,8 @@
     $("arrGroup").classList.remove("invalid");
     $("err-gate").classList.remove("show");
     $("err-arr").classList.remove("show");
+    $("guidelinesAcknowledgmentBox").classList.remove("invalid");
+    $("err-guidelinesAcknowledged").classList.remove("show");
   }
 
   function showMsg(text, type) {
@@ -1363,6 +1478,12 @@
     if (!isValidPHMobile($("phone").value.trim())) {
       showError("phone", $("phone"));
       problems.push("Mobile number");
+    }
+
+    if (!$("guidelinesAcknowledged").checked) {
+      $("guidelinesAcknowledgmentBox").classList.add("invalid");
+      $("err-guidelinesAcknowledged").classList.add("show");
+      problems.push("Permanent Gate Pass guidelines acknowledgment");
     }
 
     return problems;

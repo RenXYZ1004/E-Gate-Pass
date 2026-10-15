@@ -422,6 +422,10 @@ function submitApplication(data) {
 
     var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
 
+    // The Permanent Gate Pass guidelines are presented in the public form and
+    // require an unchecked-by-default confirmation before submission. Acceptance
+    // is intentionally not sent to or recorded by this backend.
+
     // ── One application per student ──────────────────────────
     var clash = findLiveRecord_(sheet, headers, data.studid);
     if (clash) {

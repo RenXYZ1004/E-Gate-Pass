@@ -1,0 +1,454 @@
+-- SNHS Gradebook schema. Run once in Supabase SQL Editor before deploying.
+create extension if not exists pgcrypto;
+
+create table if not exists public.teacher_profiles (
+  id uuid primary key references auth.users (id) on delete cascade,
+  full_name text not null check (char_length(full_name) between 3 and 120),
+  email text not null,
+  gender text not null default 'Prefer not to say' check (gender in ('Female', 'Male', 'Prefer not to say')),
+  avatar_path text,
+  -- Legacy data URLs are retained only so existing profile photos remain visible during migration.
+  avatar_webp_data_url text check (avatar_webp_data_url is null or (char_length(avatar_webp_data_url) <= 520000 and avatar_webp_data_url like 'data:image/webp;base64,%')),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.teacher_sections (
+  id uuid primary key default gen_random_uuid(),
+  teacher_id uuid not null references auth.users (id) on delete cascade,
+  grade_level smallint not null check (grade_level between 7 and 12),
+  section_name text not null check (char_length(section_name) between 1 and 40),
+  academic_year text not null check (char_length(academic_year) between 7 and 12),
+  is_active boolean not null default false,
+  created_at timestamptz not null default now(),
+  constraint teacher_sections_unique_class unique (grade_level, section_name, academic_year)
+);
+
+alter table public.teacher_profiles add column if not exists avatar_path text;
+
+create table if not exists public.students (
+  id uuid primary key default gen_random_uuid(),
+  full_name text not null check (char_length(full_name) between 3 and 120),
+  -- HMAC digests let the server detect duplicates and verify access without retaining the LRN.
+  lrn_digest char(64) not null unique,
+  access_digest char(64) not null unique,
+  -- PINs are stored as server-keyed HMAC digests; null supports existing records during upgrade.
+  pin_digest char(64),
+  date_of_birth_encrypted text not null,
+  gender text not null check (gender in ('Female', 'Male', 'Prefer not to say')),
+  avatar_path text,
+  -- Legacy data URLs are retained only so existing student photos remain visible during migration.
+  avatar_webp_data_url text check (avatar_webp_data_url is null or (char_length(avatar_webp_data_url) <= 520000 and avatar_webp_data_url like 'data:image/webp;base64,%')),
+  section_id uuid not null references public.teacher_sections (id) on delete restrict,
+  privacy_notice_version text,
+  privacy_consented_at timestamptz,
+  registered_at timestamptz not null default now()
+);
+
+alter table public.students add column if not exists privacy_notice_version text;
+alter table public.students add column if not exists privacy_consented_at timestamptz;
+
+create table if not exists public.subject_grades (
+  id uuid primary key default gen_random_uuid(),
+  student_id uuid not null references public.students (id) on delete cascade,
+  subject_name text not null check (char_length(subject_name) between 2 and 80),
+  semester_1 numeric(5,2) constraint subject_grades_semester_1_range check (semester_1 is null or semester_1 between 0 and 100),
+  semester_2 numeric(5,2) constraint subject_grades_semester_2_range check (semester_2 is null or semester_2 between 0 and 100),
+  semester_3 numeric(5,2) constraint subject_grades_semester_3_range check (semester_3 is null or semester_3 between 0 and 100),
+  updated_by uuid not null references auth.users (id),
+  updated_at timestamptz not null default now(),
+  constraint subject_grades_unique_student_subject unique (student_id, subject_name)
+);
+
+alter table public.students add column if not exists avatar_path text;
+
+alter table public.subject_grades add column if not exists semester_1 numeric(5,2);
+alter table public.subject_grades add column if not exists semester_2 numeric(5,2);
+alter table public.subject_grades add column if not exists semester_3 numeric(5,2);
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'subject_grades' and column_name = 'quarter_1'
+  ) and exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'subject_grades' and column_name = 'quarter_2'
+  ) and exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'subject_grades' and column_name = 'quarter_3'
+  ) and exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'subject_grades' and column_name = 'quarter_4'
+  ) then
+    execute $migration$
+      update public.subject_grades
+      set semester_1 = coalesce(semester_1, quarter_1),
+          semester_2 = coalesce(semester_2, quarter_2),
+          semester_3 = coalesce(semester_3,
+            case
+              when quarter_3 is not null and quarter_4 is not null then round((quarter_3 + quarter_4) / 2, 2)
+              else coalesce(quarter_3, quarter_4)
+            end)
+      where semester_1 is null or semester_2 is null or semester_3 is null
+    $migration$;
+  end if;
+end;
+$$;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'subject_grades_semester_1_range') then
+    alter table public.subject_grades add constraint subject_grades_semester_1_range check (semester_1 is null or semester_1 between 0 and 100);
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'subject_grades_semester_2_range') then
+    alter table public.subject_grades add constraint subject_grades_semester_2_range check (semester_2 is null or semester_2 between 0 and 100);
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'subject_grades_semester_3_range') then
+    alter table public.subject_grades add constraint subject_grades_semester_3_range check (semester_3 is null or semester_3 between 0 and 100);
+  end if;
+end;
+$$;
+
+alter table public.students add column if not exists pin_digest char(64);
+
+create table if not exists public.student_assessments (
+  id uuid primary key default gen_random_uuid(),
+  student_id uuid not null references public.students (id) on delete cascade,
+  category text not null check (category in ('Quiz', 'Activity', 'Exam')),
+  assessment_name text not null check (char_length(assessment_name) between 2 and 100),
+  score numeric(8,2) not null check (score >= 0),
+  max_score numeric(8,2) not null check (max_score > 0),
+  assessed_on date not null default current_date,
+  updated_by uuid not null references auth.users (id),
+  updated_at timestamptz not null default now(),
+  constraint student_assessments_score_within_max check (score <= max_score)
+);
+
+create table if not exists public.student_teacher_comments (
+  student_id uuid primary key references public.students (id) on delete cascade,
+  comment text not null check (char_length(btrim(comment)) between 1 and 1000),
+  updated_by uuid not null references auth.users (id),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists students_section_idx on public.students (section_id, full_name);
+create index if not exists subject_grades_student_idx on public.subject_grades (student_id, subject_name);
+create index if not exists student_assessments_student_date_idx on public.student_assessments (student_id, assessed_on desc);
+
+-- All self-service Auth sign-ups are teacher accounts. Teachers add sections from their own portal.
+create or replace function public.handle_new_teacher()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  insert into public.teacher_profiles (id, full_name, email, gender)
+  values (
+    new.id,
+    coalesce(nullif(btrim(new.raw_user_meta_data ->> 'full_name'), ''), 'Teacher'),
+    coalesce(new.email, ''),
+    case when new.raw_user_meta_data ->> 'gender' in ('Female', 'Male') then new.raw_user_meta_data ->> 'gender' else 'Prefer not to say' end
+  );
+
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created_snhs on auth.users;
+create trigger on_auth_user_created_snhs
+  after insert on auth.users
+  for each row execute procedure public.handle_new_teacher();
+revoke all on function public.handle_new_teacher() from public, anon, authenticated;
+
+alter table public.teacher_profiles enable row level security;
+alter table public.teacher_sections enable row level security;
+alter table public.students enable row level security;
+alter table public.subject_grades enable row level security;
+alter table public.student_assessments enable row level security;
+alter table public.student_teacher_comments enable row level security;
+
+drop policy if exists "Teachers read own profile" on public.teacher_profiles;
+create policy "Teachers read own profile" on public.teacher_profiles
+  for select to authenticated using (id = (select auth.uid()));
+drop policy if exists "Teachers update own profile" on public.teacher_profiles;
+create policy "Teachers update own profile" on public.teacher_profiles
+  for update to authenticated using (id = (select auth.uid())) with check (id = (select auth.uid()));
+
+drop policy if exists "Teachers read own sections" on public.teacher_sections;
+create policy "Teachers read own sections" on public.teacher_sections
+  for select to authenticated using (teacher_id = (select auth.uid()));
+drop policy if exists "Teachers create own sections" on public.teacher_sections;
+create policy "Teachers create own sections" on public.teacher_sections
+  for insert to authenticated with check (teacher_id = (select auth.uid()));
+drop policy if exists "Teachers update own sections" on public.teacher_sections;
+create policy "Teachers update own sections" on public.teacher_sections
+  for update to authenticated using (teacher_id = (select auth.uid())) with check (teacher_id = (select auth.uid()));
+drop policy if exists "Teachers delete own sections" on public.teacher_sections;
+create policy "Teachers delete own sections" on public.teacher_sections
+  for delete to authenticated using (teacher_id = (select auth.uid()));
+
+drop policy if exists "Teachers read students in their sections" on public.students;
+create policy "Teachers read students in their sections" on public.students
+  for select to authenticated using (
+    exists (
+      select 1 from public.teacher_sections s
+      where s.id = students.section_id and s.teacher_id = (select auth.uid())
+    )
+  );
+
+drop policy if exists "Teachers read grades in their sections" on public.subject_grades;
+create policy "Teachers read grades in their sections" on public.subject_grades
+  for select to authenticated using (
+    exists (
+      select 1 from public.students st
+      join public.teacher_sections sec on sec.id = st.section_id
+      where st.id = subject_grades.student_id and sec.teacher_id = (select auth.uid())
+    )
+  );
+drop policy if exists "Teachers add grades in their sections" on public.subject_grades;
+create policy "Teachers add grades in their sections" on public.subject_grades
+  for insert to authenticated with check (
+    updated_by = (select auth.uid()) and exists (
+      select 1 from public.students st
+      join public.teacher_sections sec on sec.id = st.section_id
+      where st.id = subject_grades.student_id and sec.teacher_id = (select auth.uid())
+    )
+  );
+drop policy if exists "Teachers update grades in their sections" on public.subject_grades;
+create policy "Teachers update grades in their sections" on public.subject_grades
+  for update to authenticated using (
+    exists (
+      select 1 from public.students st
+      join public.teacher_sections sec on sec.id = st.section_id
+      where st.id = subject_grades.student_id and sec.teacher_id = (select auth.uid())
+    )
+  ) with check (
+    updated_by = (select auth.uid()) and exists (
+      select 1 from public.students st
+      join public.teacher_sections sec on sec.id = st.section_id
+      where st.id = subject_grades.student_id and sec.teacher_id = (select auth.uid())
+    )
+  );
+drop policy if exists "Teachers delete grades in their sections" on public.subject_grades;
+create policy "Teachers delete grades in their sections" on public.subject_grades
+  for delete to authenticated using (
+    exists (
+      select 1 from public.students st
+      join public.teacher_sections sec on sec.id = st.section_id
+      where st.id = subject_grades.student_id and sec.teacher_id = (select auth.uid())
+    )
+  );
+
+drop policy if exists "Teachers read assessments in their sections" on public.student_assessments;
+create policy "Teachers read assessments in their sections" on public.student_assessments
+  for select to authenticated using (
+    exists (
+      select 1 from public.students st
+      join public.teacher_sections sec on sec.id = st.section_id
+      where st.id = student_assessments.student_id and sec.teacher_id = (select auth.uid())
+    )
+  );
+drop policy if exists "Teachers add assessments in their sections" on public.student_assessments;
+create policy "Teachers add assessments in their sections" on public.student_assessments
+  for insert to authenticated with check (
+    updated_by = (select auth.uid()) and exists (
+      select 1 from public.students st
+      join public.teacher_sections sec on sec.id = st.section_id
+      where st.id = student_assessments.student_id and sec.teacher_id = (select auth.uid())
+    )
+  );
+drop policy if exists "Teachers update assessments in their sections" on public.student_assessments;
+create policy "Teachers update assessments in their sections" on public.student_assessments
+  for update to authenticated using (
+    exists (
+      select 1 from public.students st
+      join public.teacher_sections sec on sec.id = st.section_id
+      where st.id = student_assessments.student_id and sec.teacher_id = (select auth.uid())
+    )
+  ) with check (
+    updated_by = (select auth.uid()) and exists (
+      select 1 from public.students st
+      join public.teacher_sections sec on sec.id = st.section_id
+      where st.id = student_assessments.student_id and sec.teacher_id = (select auth.uid())
+    )
+  );
+drop policy if exists "Teachers delete assessments in their sections" on public.student_assessments;
+create policy "Teachers delete assessments in their sections" on public.student_assessments
+  for delete to authenticated using (
+    exists (
+      select 1 from public.students st
+      join public.teacher_sections sec on sec.id = st.section_id
+      where st.id = student_assessments.student_id and sec.teacher_id = (select auth.uid())
+    )
+  );
+
+drop policy if exists "Teachers read comments in their sections" on public.student_teacher_comments;
+create policy "Teachers read comments in their sections" on public.student_teacher_comments
+  for select to authenticated using (
+    exists (
+      select 1 from public.students st
+      join public.teacher_sections sec on sec.id = st.section_id
+      where st.id = student_teacher_comments.student_id and sec.teacher_id = (select auth.uid())
+    )
+  );
+drop policy if exists "Teachers add comments in their sections" on public.student_teacher_comments;
+create policy "Teachers add comments in their sections" on public.student_teacher_comments
+  for insert to authenticated with check (
+    updated_by = (select auth.uid()) and exists (
+      select 1 from public.students st
+      join public.teacher_sections sec on sec.id = st.section_id
+      where st.id = student_teacher_comments.student_id and sec.teacher_id = (select auth.uid())
+    )
+  );
+drop policy if exists "Teachers update comments in their sections" on public.student_teacher_comments;
+create policy "Teachers update comments in their sections" on public.student_teacher_comments
+  for update to authenticated using (
+    exists (
+      select 1 from public.students st
+      join public.teacher_sections sec on sec.id = st.section_id
+      where st.id = student_teacher_comments.student_id and sec.teacher_id = (select auth.uid())
+    )
+  ) with check (
+    updated_by = (select auth.uid()) and exists (
+      select 1 from public.students st
+      join public.teacher_sections sec on sec.id = st.section_id
+      where st.id = student_teacher_comments.student_id and sec.teacher_id = (select auth.uid())
+    )
+  );
+drop policy if exists "Teachers delete comments in their sections" on public.student_teacher_comments;
+create policy "Teachers delete comments in their sections" on public.student_teacher_comments
+  for delete to authenticated using (
+    exists (
+      select 1 from public.students st
+      join public.teacher_sections sec on sec.id = st.section_id
+      where st.id = student_teacher_comments.student_id and sec.teacher_id = (select auth.uid())
+    )
+  );
+
+-- A server-only, atomic per-IP limiter for registration and public grade lookup.
+create table if not exists public.request_limits (
+  id uuid primary key default gen_random_uuid(),
+  ip_digest char(64) not null,
+  action text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists request_limits_lookup_idx on public.request_limits (ip_digest, action, created_at desc);
+alter table public.request_limits enable row level security;
+revoke all on public.request_limits from public, anon, authenticated;
+
+create or replace function public.consume_request_limit(
+  p_ip_digest text,
+  p_action text,
+  p_limit integer,
+  p_window_seconds integer
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  request_count integer;
+begin
+  if p_limit < 1 or p_window_seconds < 1 or char_length(p_action) > 60 then
+    return false;
+  end if;
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtext(p_ip_digest), pg_catalog.hashtext(p_action));
+  delete from public.request_limits where created_at < now() - interval '1 day';
+  select count(*) into request_count
+  from public.request_limits
+  where ip_digest = p_ip_digest and action = p_action
+    and created_at > now() - make_interval(secs => p_window_seconds);
+  if request_count >= p_limit then
+    return false;
+  end if;
+  insert into public.request_limits (ip_digest, action) values (p_ip_digest, p_action);
+  return true;
+end;
+$$;
+
+revoke all on function public.consume_request_limit(text, text, integer, integer) from public, anon, authenticated;
+grant execute on function public.consume_request_limit(text, text, integer, integer) to service_role;
+
+-- Profile photos are stored as private WebP objects. The database keeps only their storage paths.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('profile-photos', 'profile-photos', false, 2097152, array['image/webp'])
+on conflict (id) do update set public = false, file_size_limit = 2097152, allowed_mime_types = array['image/webp'];
+
+drop policy if exists "Teachers read their own and roster photos" on storage.objects;
+create policy "Teachers read their own and roster photos" on storage.objects
+  for select to authenticated using (
+    bucket_id = 'profile-photos' and (
+      ((storage.foldername(name))[1] = 'teachers' and (storage.foldername(name))[2] = (select auth.uid())::text)
+      or (
+        (storage.foldername(name))[1] = 'students' and exists (
+          select 1 from public.students st
+          join public.teacher_sections sec on sec.id = st.section_id
+          where st.id::text = (storage.foldername(name))[2] and sec.teacher_id = (select auth.uid())
+        )
+      )
+    )
+  );
+drop policy if exists "Teachers upload their own photos" on storage.objects;
+create policy "Teachers upload their own photos" on storage.objects
+  for insert to authenticated with check (
+    bucket_id = 'profile-photos'
+    and (storage.foldername(name))[1] = 'teachers'
+    and (storage.foldername(name))[2] = (select auth.uid())::text
+  );
+drop policy if exists "Teachers update their own photos" on storage.objects;
+create policy "Teachers update their own photos" on storage.objects
+  for update to authenticated using (
+    bucket_id = 'profile-photos'
+    and (storage.foldername(name))[1] = 'teachers'
+    and (storage.foldername(name))[2] = (select auth.uid())::text
+  ) with check (
+    bucket_id = 'profile-photos'
+    and (storage.foldername(name))[1] = 'teachers'
+    and (storage.foldername(name))[2] = (select auth.uid())::text
+  );
+drop policy if exists "Teachers delete their own photos" on storage.objects;
+create policy "Teachers delete their own photos" on storage.objects
+  for delete to authenticated using (
+    bucket_id = 'profile-photos'
+    and (storage.foldername(name))[1] = 'teachers'
+    and (storage.foldername(name))[2] = (select auth.uid())::text
+  );
+
+-- RLS policies remain the data-access boundary for teacher sessions.
+revoke usage on schema public from public, anon;
+grant usage on schema public to authenticated, service_role;
+revoke all on public.teacher_profiles, public.teacher_sections, public.students, public.subject_grades, public.student_assessments, public.student_teacher_comments
+  from public, anon, authenticated, service_role;
+grant select, update on public.teacher_profiles to authenticated;
+grant select, insert, update, delete on public.teacher_sections to authenticated;
+grant select (id, full_name, gender, avatar_path, avatar_webp_data_url, section_id, registered_at) on public.students to authenticated;
+grant select, insert, update, delete on public.subject_grades to authenticated;
+grant select, insert, update, delete on public.student_assessments to authenticated;
+grant select, insert, update, delete on public.student_teacher_comments to authenticated;
+-- Server routes use a secret key and need explicit table grants on newer Supabase projects.
+grant select, insert, update, delete on public.teacher_profiles to service_role;
+grant select, insert, update, delete on public.teacher_sections to service_role;
+grant select, insert, update, delete on public.students to service_role;
+grant select, insert, update, delete on public.subject_grades to service_role;
+grant select, insert, update, delete on public.student_assessments to service_role;
+grant select, insert, update, delete on public.student_teacher_comments to service_role;
+revoke all on public.request_limits from public, anon, authenticated, service_role;
+
+
+-- Encrypted public contact messages. Only server-side service_role may read/write this table.
+create table if not exists public.contact_submissions (
+  id uuid primary key default gen_random_uuid(),
+  name_encrypted text not null,
+  email_encrypted text not null,
+  subject_encrypted text not null,
+  message_encrypted text not null,
+  privacy_notice_version text not null,
+  consented_at timestamptz not null default now(),
+  status text not null default 'new' check (status in ('new', 'in_review', 'closed')),
+  created_at timestamptz not null default now()
+);
+create index if not exists contact_submissions_created_at_idx on public.contact_submissions (created_at desc);
+alter table public.contact_submissions enable row level security;
+revoke all on public.contact_submissions from public, anon, authenticated;
+grant all on public.contact_submissions to service_role;
