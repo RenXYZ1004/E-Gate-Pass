@@ -4,7 +4,6 @@ const nodemailer = require('nodemailer');
 const { rejected } = require('./_lib/request-guard');
 
 const DEFAULT_FROM_NAME = 'Southville Gatepass System';
-const DEFAULT_BASE_URL = 'https://e-gate-pass-theta.vercel.app';
 const BRAND = '#341539';
 const ACCENT = '#00c9b1';
 const INK = '#25212a';
@@ -71,8 +70,10 @@ function getLogoUrl(req) {
   if (configured) return configured.replace(/\/$/, '') + '/SISC_logo.png';
 
   const host = clean(req.headers && req.headers.host);
-  if (host) return `https://${host}/SISC_logo.png`;
-  return `${DEFAULT_BASE_URL}/SISC_logo.png`;
+  if (host && /^[a-z0-9.-]+(?::\d+)?$/i.test(host)) return `https://${host}/SISC_logo.png`;
+  // Prefer an explicit deployment URL rather than silently falling back to an
+  // old Vercel project name. Missing configuration degrades to no logo.
+  return '';
 }
 
 function decodeAttachment(body) {

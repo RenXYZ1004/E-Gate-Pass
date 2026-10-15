@@ -1,4 +1,21 @@
+import { SCHOOL_TIME_ZONE } from '../../config.js';
+
 export default class DashboardController {
+  // Release dashboard-only timers when the user changes pages. Without this,
+  // the live clock and sync-age timer kept running in the background on every
+  // other page and retained the controller for the life of the tab.
+  static cleanup(controller) {
+    if (!controller) return;
+    if (controller._dashClockInterval) {
+      clearInterval(controller._dashClockInterval);
+      controller._dashClockInterval = null;
+    }
+    if (controller._dashHealthInterval) {
+      clearInterval(controller._dashHealthInterval);
+      controller._dashHealthInterval = null;
+    }
+  }
+
   static bind(controller) {
     // ── Quick Action Buttons ────────────────────────────────
     const btnScan = document.getElementById('dash-btn-scan');
@@ -32,25 +49,24 @@ export default class DashboardController {
     });
 
     // ── Live Clock (updates every second) ───────────────────
-    if (controller._dashClockInterval) clearInterval(controller._dashClockInterval);
+    this.cleanup(controller);
     controller._dashClockInterval = setInterval(() => {
       const now = new Date();
       const timeEl = document.getElementById('dash-live-time');
       const dateEl = document.getElementById('dash-live-date');
       if (timeEl) {
         timeEl.textContent = now.toLocaleTimeString('en-PH', {
-          hour: '2-digit', minute: '2-digit', second: '2-digit'
+          hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: SCHOOL_TIME_ZONE
         });
       }
       if (dateEl) {
         dateEl.textContent = now.toLocaleDateString('en-PH', {
-          weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+          weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: SCHOOL_TIME_ZONE
         });
       }
     }, 1000);
 
     // ── System Health: Live sync timer (updates every 5s) ───
-    if (controller._dashHealthInterval) clearInterval(controller._dashHealthInterval);
     controller._dashHealthInterval = setInterval(() => {
       const el = document.getElementById('dash-health-sync');
       if (el && controller.model.lastSyncTime) {

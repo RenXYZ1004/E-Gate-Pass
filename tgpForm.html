@@ -2,9 +2,10 @@
 <html lang="en">
 
 <head>
+<meta name="robots" content="noindex,follow">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="SISC e-Gatepass — Temporary Gate Pass application form">
+  <meta name="description" content="Request a temporary student gate pass from Southville International School and Colleges. Complete the form with the required guardian contact details.">
   <meta name="theme-color" content="#422467">
   <link rel="icon" type="image/png" href="logo.png">
   <title>Request a Temporary Gate Pass | SISC e-Gatepass</title>
@@ -306,12 +307,12 @@
 
   <!-- Header -->
   <div class="header">
-    <img src="SISC_logo.png" alt="SISC">
+    <img src="SISC_logo.webp" alt="Southville International School and Colleges logo">
     <div class="htext">
       <h1>Southville International School and Colleges</h1>
       <div class="sub1">Las Piñas City, Metro Manila</div>
       <div class="sub2">Temporary Gate Pass Application</div>
-      <div class="sub3">SY 2026–2027</div>
+      <div class="sub3" data-school-year-label>SY 2026–2027</div>
     </div>
     <a href="." class="back-home">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -900,5 +901,9 @@
   populateSections();
 </script>
 
+<script type="module">
+  import { SCHOOL_YEAR_LABEL } from './js/config.js';
+  document.querySelectorAll('[data-school-year-label]').forEach(el => { el.textContent = SCHOOL_YEAR_LABEL; });
+</script>
 </body>
 </html>

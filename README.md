@@ -51,6 +51,15 @@ Built for **SISC**.
 
 ---
 
+
+### Node API dependencies
+
+The Vercel API routes use packages declared in `package.json`. For local setup, run `npm install` once before testing Node API routes. Vercel installs these dependencies during deployment.
+
+### Google Apps Script backend
+
+Use **`Code.gs` only** as the canonical Apps Script backend source. The older `app.gs` copy was removed because it duplicates global entry points such as `doGet`, `doPost`, and `handleRequest`. Apps Script loads all `.gs` files in a project into one shared global scope; file names do not select which backend is active. Keep only one definition of each entry-point function, save the script, and deploy a new Web App version. If you reuse the existing deployment, keep the Web App URL in `js/config.js` unchanged.
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -81,3 +90,14 @@ Built for **SISC**.
 To enable automated emails:
 1. Create an account on Google CLoud Console.
 2. Update the 'Environment Details'.
+
+
+## SEO build and public contact form
+
+The project stays a static multi-page site; server-side rendering is intentionally not introduced because the faculty dashboard and forms are browser-driven and should not be indexed. Vercel runs `node build-seo.cjs` and serves the generated `dist/` directory. The build reads `SITE_URL` first, then Vercel's `VERCEL_PROJECT_PRODUCTION_URL` / `VERCEL_URL`. Set `SITE_URL` in Vercel to the real production origin (for example `https://gatepass.example.edu`) to ensure canonical URLs, Open Graph URLs, `robots.txt`, and `sitemap.xml` use the correct domain.
+
+Optional Search Console verification: add the HTML-tag verification token as `GOOGLE_SITE_VERIFICATION`, then redeploy and click Verify in Search Console. The build omits this tag when the value is empty. Optional Google Analytics: add `GA_MEASUREMENT_ID` only after school approval; the public landing page waits for explicit visitor consent before loading Analytics. The dashboard and application forms do not load Analytics.
+
+The general contact form uses `POST /api/contact`, existing Gmail OAuth credentials (`GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, `GMAIL_USER_EMAIL`) and a recipient inbox set in `CONTACT_TO_EMAIL`. It has server-side validation, HTML escaping, a honeypot, same-site origin checking, and a per-instance rate limit. Configure these environment variables in Vercel before expecting contact emails to send. The rate limit is a deterrent rather than a globally shared limit; use a durable rate-limit service if abuse becomes an issue.
+
+`npm run check:syntax` validates JavaScript syntax; `npm run check:seo` verifies key metadata and noindex policy; `SITE_URL=https://example.edu npm run build` can be used for a local build test (replace with the actual production origin before deployment).

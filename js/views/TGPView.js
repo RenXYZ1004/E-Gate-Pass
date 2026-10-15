@@ -1,5 +1,5 @@
 import Icons from '../icons.js';
-import { escapeHTML } from '../utils.js';
+import { escapeHTML, schoolDateKey, schoolDateLabel } from '../utils.js';
 
 export default class TGPView {
   static render(model) {
@@ -164,7 +164,7 @@ export default class TGPView {
               <div class="grid-2 mb-12">
                 <div class="form-group required">
                   <label for="tgp-date">Valid For Date</label>
-                  <input type="date" id="tgp-date" class="form-input" required min="${new Date().toLocaleDateString('en-CA')}">
+                  <input type="date" id="tgp-date" class="form-input" required min="${schoolDateKey(new Date())}">
                 </div>
                 <div class="form-group required">
                   <label for="tgp-gate">Designated Gate</label>
@@ -253,7 +253,7 @@ export default class TGPView {
       const sName = t.name || (student ? student.name : 'Unknown');
       const sGrade = (t.grade ? `${t.grade}${t.section ? ' - ' + t.section : ''}` : '') || (student ? (student.fullSection || student.grade) : '');
       
-      const dateStr = new Date(t.validDate).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+      const dateStr = schoolDateLabel(t.validDate, { month: 'short', day: 'numeric', year: 'numeric' });
       
       let badgeHtml = '';
       if (t.status === 'pending') badgeHtml = `<span class="badge b-pending">PENDING</span>`;

@@ -4,6 +4,12 @@
   "private": true,
   "description": "Southville International School and Colleges e-Gatepass System",
   "dependencies": {
+    "@vercel/blob": "^2.8.1",
     "nodemailer": "^6.9.16"
+  },
+  "scripts": {
+    "check:syntax": "node scripts/check-syntax.cjs",
+    "build": "node build-seo.cjs",
+    "check:seo": "node scripts/check-seo.cjs"
   }
 }

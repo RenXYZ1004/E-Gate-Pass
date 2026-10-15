@@ -1,5 +1,6 @@
 import Icons from '../icons.js';
 import { escapeHTML, resolvePhotoUrl, hasPhoto } from '../utils.js';
+import { SCHOOL_YEAR } from '../config.js';
 
 export default class StudentsView {
   static render(model) {
@@ -354,7 +355,7 @@ export default class StudentsView {
 
             <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px;font-family:monospace;font-size:11px;color:var(--text2);overflow-x:auto;">
               name,studid,grade,section,schoolyear,preferredgate,arrangements,parentname,parentemail,phone<br>
-              "Dela Cruz, Juan",23-1001,Grade 7,Diligence,2026-2027,Gate 1,Will go home by herself/himself,Maria Dela Cruz,maria@email.com,09171234567
+              "Dela Cruz, Juan",23-1001,Grade 7,Diligence,${SCHOOL_YEAR},Gate 1,Will go home by herself/himself,Maria Dela Cruz,maria@email.com,09171234567
             </div>
 
             <div class="form-group" style="margin-bottom: 16px;">
@@ -500,7 +501,7 @@ export default class StudentsView {
               <div class="form-grid mb-12">
                 <div class="form-group">
                   <label for="edit-schoolyear">School Year</label>
-                  <input type="text" id="edit-schoolyear" class="form-input" placeholder="e.g. 2026-2027" maxlength="20">
+                  <input type="text" id="edit-schoolyear" class="form-input" placeholder="e.g. ${SCHOOL_YEAR}" maxlength="20">
                 </div>
               </div>
               <div class="form-grid mb-12">
@@ -616,7 +617,7 @@ export default class StudentsView {
           <td>
             <div style="display: flex; align-items: center; gap: 10px;">
               <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; overflow: hidden; color: var(--primary); font-weight: 700; font-size: 11px;">
-                ${hasPhoto(s.photo) ? `<img src="${escapeHTML(resolvePhotoUrl(s.photo))}" loading="lazy" decoding="async" alt="" style="width:100%;height:100%;object-fit:cover;">` : escapeHTML((s.name || 'U').substring(0, 2).toUpperCase())}
+                ${hasPhoto(s.photo) ? `<img src="${escapeHTML(resolvePhotoUrl(s.photo))}" loading="lazy" decoding="async" alt="" style="width:100%;height:100%;object-fit:cover;">` : escapeHTML(String(s.name || 'U').substring(0, 2).toUpperCase())}
               </div>
               <div>
                 <div style="font-weight: 600;">${escapeHTML(s.name)}</div>
@@ -676,7 +677,7 @@ export default class StudentsView {
       <div class="approval-list-item" data-id="${escapeHTML(s.id)}"
         style="padding:12px 14px; cursor:pointer; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; transition:background 0.15s;">
         <div style="width:38px; height:38px; border-radius:50%; flex-shrink:0; overflow:hidden; background:var(--primary-soft); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:var(--primary);">
-          ${hasPhoto(s.photo) ? `<img src="${escapeHTML(resolvePhotoUrl(s.photo))}" loading="lazy" decoding="async" alt="" style="width:100%;height:100%;object-fit:cover;">` : escapeHTML((s.name || 'U').substring(0,2).toUpperCase())}
+          ${hasPhoto(s.photo) ? `<img src="${escapeHTML(resolvePhotoUrl(s.photo))}" loading="lazy" decoding="async" alt="" style="width:100%;height:100%;object-fit:cover;">` : escapeHTML(String(s.name || 'U').substring(0,2).toUpperCase())}
         </div>
         <div style="flex:1; min-width:0;">
           <div style="font-weight:600; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(s.name || '—')}</div>
@@ -699,7 +700,7 @@ export default class StudentsView {
           <div style="width:88px; height:88px; border-radius:10px; border:2px solid var(--border); overflow:hidden; flex-shrink:0; background:var(--bg-elevated); display:flex; align-items:center; justify-content:center;">
             ${photo
               ? `<img src="${escapeHTML(photo)}" loading="lazy" decoding="async" alt="" style="width:100%;height:100%;object-fit:cover;">`
-              : `<span style="font-size:26px; font-weight:800; color:var(--primary);">${escapeHTML((student.name||'U').substring(0,2).toUpperCase())}</span>`}
+              : `<span style="font-size:26px; font-weight:800; color:var(--primary);">${escapeHTML(String(student.name || 'U').substring(0,2).toUpperCase())}</span>`}
           </div>
           <div style="flex:1; min-width:0;">
             <div style="font-size:19px; font-weight:700; line-height:1.25;">${escapeHTML(student.name || '—')}</div>
@@ -786,7 +787,7 @@ export default class StudentsView {
           <!-- Header: Photo + Info -->
           <div style="display: flex; align-items: flex-start; gap: 12px;">
             <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; overflow: hidden; color: var(--primary); font-weight: 700; font-size: 16px; flex-shrink: 0;">
-              ${hasPhoto(s.photo) ? `<img src="${escapeHTML(resolvePhotoUrl(s.photo))}" loading="lazy" decoding="async" alt="" style="width:100%;height:100%;object-fit:cover;">` : escapeHTML((s.name || 'U').substring(0, 2).toUpperCase())}
+              ${hasPhoto(s.photo) ? `<img src="${escapeHTML(resolvePhotoUrl(s.photo))}" loading="lazy" decoding="async" alt="" style="width:100%;height:100%;object-fit:cover;">` : escapeHTML(String(s.name || 'U').substring(0, 2).toUpperCase())}
             </div>
             <div style="flex: 1; min-width: 0;">
               <div style="font-weight: 700; font-size: 15px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHTML(s.name)}</div>

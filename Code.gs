@@ -82,6 +82,19 @@ function handleRequest(e) {
     const action = params.action || '';
     let result;
 
+    // All mutations must carry a POST body. The old router allowed most write
+    // actions through doGet(), which could append empty rows when a GET URL was
+    // visited or prefetched. Public application submissions remain POST-only.
+    var postOnlyActions = {
+      addGate: true, updateGate: true, removeGate: true,
+      addStudent: true, updateStudent: true, updateStudentStatus: true, removeStudent: true,
+      addLog: true, addTGP: true, updateTGPStatus: true,
+      submitApplication: true, uploadPhoto: true
+    };
+    if (postOnlyActions[action] && (!e || !e.postData || !String(e.postData.contents || '').trim())) {
+      throw new Error('POST request with a JSON body required for this action.');
+    }
+
     switch (action) {
       // ── READ operations (GET requests) ──
       case 'getStudents':
@@ -853,7 +866,7 @@ function testAddTGP() {
   var sample = {
     id: 'TGP-TEST01',
     studentId: 'PGP-TEST001',
-    validDate: '2026-07-13',
+    validDate: Utilities.formatDate(new Date(), 'Asia/Manila', 'yyyy-MM-dd'),
     gate: 'Main Gate',
     reason: 'Medical appointment',
     requester: 'Test Parent',

@@ -1,4 +1,4 @@
-import { resolvePhotoUrl, hasPhoto, generatePaginationHTML, bindPaginationEvents, generateQRToken, waitForImages, compressImageToBlob, uploadPhotoLocally, renderQRCodeInto, ensureQRCodeLoaded, ensureHtml2CanvasLoaded } from '../../utils.js';
+import { resolvePhotoUrl, hasPhoto, generatePaginationHTML, bindPaginationEvents, generateQRToken, waitForImages, compressImageToBlob, uploadPhotoLocally, renderQRCodeInto, ensureQRCodeLoaded, ensureHtml2CanvasLoaded, schoolDateLabel } from '../../utils.js';
 import Dialog from '../../services/Dialog.js';
 import { setButtonLoading } from '../../views/AppView.js';
 
@@ -259,7 +259,7 @@ export default class TGPController {
         const student = controller.model.getStudentByPassId(tgp.studentId) || controller.model.getStudentByStudId(tgp.studentId);
         const sName = String(tgp.name || (student && student.name) || 'Unknown Student');
         const sGrade = (tgp.grade ? `${tgp.grade}${tgp.section ? ' - ' + tgp.section : ''}` : '') || (student ? `${student.grade}${student.section ? ' - ' + student.section : ''}` : '');
-        const dateStr = new Date(tgp.validDate).toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' });
+        const dateStr = schoolDateLabel(tgp.validDate, { month: 'long', day: 'numeric', year: 'numeric' });
 
         try {
           await ensureQRCodeLoaded();
@@ -269,9 +269,9 @@ export default class TGPController {
         }
 
         const photoHtml = (student && hasPhoto(student.photo))
-          ? `<img src="${resolvePhotoUrl(student.photo)}" style="width:100%;height:100%;object-fit:cover;">`
+          ? `<img src="${escapeHTML(resolvePhotoUrl(student.photo))}" alt="${escapeHTML(sName)} student photo" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">`
           : hasPhoto(tgp.photo)
-          ? `<img src="${resolvePhotoUrl(tgp.photo)}" style="width:100%;height:100%;object-fit:cover;">`
+          ? `<img src="${escapeHTML(resolvePhotoUrl(tgp.photo))}" alt="${escapeHTML(sName)} gate-pass photo" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">`
           : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;color:#e08700;">${sName.substring(0,2).toUpperCase()}</div>`;
 
         const target = document.getElementById('tgp-card-render-target');

@@ -11,18 +11,56 @@ import { SESSION_TIMEOUT_MS } from '../config.js';
 //   OFFLINE: Falls back to localStorage cache automatically
 // ════════════════════════════════════════════════════════════════
 
+// Browser storage can throw in strict privacy modes, embedded browsers, or
+// when quota is exhausted. Storage is an optimization for cache/preferences,
+// never a reason to crash the dashboard.
+function safeStorageGet(storageName, key, fallback = null) {
+  try {
+    const storage = window[storageName];
+    const value = storage.getItem(key);
+    return value === null ? fallback : value;
+  } catch (_) {
+    return fallback;
+  }
+}
+
+function safeStorageSet(storageName, key, value) {
+  try {
+    window[storageName].setItem(key, String(value));
+    return true;
+  } catch (err) {
+    console.warn(`[AppModel] Could not persist "${key}".`, err);
+    return false;
+  }
+}
+
+function safeStorageRemove(storageName, key) {
+  try {
+    window[storageName].removeItem(key);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function persistSession(profile) {
+  const localSaved = safeStorageSet('localStorage', 'pgp_session', JSON.stringify(profile));
+  const tabSaved = safeStorageSet('sessionStorage', 'pgp_browser_alive', '1');
+  return localSaved && tabSaved;
+}
+
 // Read a JSON value from localStorage without ever throwing.
 // A single corrupt entry used to break the whole app at construction time.
 function readCache(key, fallback) {
   try {
-    const raw = localStorage.getItem(key);
+    const raw = safeStorageGet('localStorage', key, null);
     if (!raw) return fallback;
     const parsed = JSON.parse(raw);
     if (Array.isArray(fallback) && !Array.isArray(parsed)) return fallback;
     return parsed ?? fallback;
   } catch (err) {
     console.warn(`[AppModel] Corrupt cache for "${key}" — resetting.`, err);
-    try { localStorage.removeItem(key); } catch (_) { }
+    safeStorageRemove('localStorage', key);
     return fallback;
   }
 }
@@ -39,8 +77,7 @@ function readCache(key, fallback) {
 // take the sync down with it.
 function writeCache(key, value) {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
-    return true;
+    return safeStorageSet('localStorage', key, JSON.stringify(value));
   } catch (err) {
     console.warn(`[AppModel] Could not cache "${key}" — ${err.name}. Continuing without it.`, err);
     return false;
@@ -91,12 +128,12 @@ export default class AppModel {
 
     // Session management
     const profile = normalizeUserProfile(readCache('pgp_session', null));
-    const browserAlive = sessionStorage.getItem('pgp_browser_alive');
+    const browserAlive = safeStorageGet('sessionStorage', 'pgp_browser_alive', null);
     this.currentUser = (profile && browserAlive) ? profile : null;
-    if (profile && !browserAlive) localStorage.removeItem('pgp_session');
+    if (profile && !browserAlive) safeStorageRemove('localStorage', 'pgp_session');
 
     // Sync state
-    this.lastSyncTime = parseInt(localStorage.getItem('pgp_last_sync') || '0');
+    this.lastSyncTime = Number.parseInt(safeStorageGet('localStorage', 'pgp_last_sync', '0'), 10) || 0;
     this.syncStatus = 'idle'; // 'idle' | 'syncing' | 'error'
     this.isOnline = navigator.onLine;
     this.lastDataHash = null; // Change detection for sync optimization
@@ -159,7 +196,7 @@ export default class AppModel {
         this.cacheAll();
         this.lastSyncTime = Date.now();
         try {
-          localStorage.setItem('pgp_last_sync', this.lastSyncTime.toString());
+          safeStorageSet('localStorage', 'pgp_last_sync', this.lastSyncTime.toString());
         } catch (_) {
           // Cache quota/privacy mode must not invalidate a successful sync.
         }
@@ -663,8 +700,10 @@ export default class AppModel {
         return null;
       }
       this.currentUser = userPayload;
-      localStorage.setItem('pgp_session', JSON.stringify(userPayload));
-      sessionStorage.setItem('pgp_browser_alive', '1');
+      if (!persistSession(userPayload)) {
+        this.currentUser = null;
+        throw new Error('Browser storage is unavailable. Enable site storage for this website, then sign in again.');
+      }
       return userPayload;
     }
     return null;
@@ -678,30 +717,32 @@ export default class AppModel {
     userPayload.loginTime = new Date().toISOString();
     userPayload.lastActivity = Date.now();
     this.currentUser = userPayload;
-    localStorage.setItem('pgp_session', JSON.stringify(userPayload));
-    sessionStorage.setItem('pgp_browser_alive', '1');
+    if (!persistSession(userPayload)) {
+      this.currentUser = null;
+      throw new Error('Browser storage is unavailable. Enable site storage for this website, then sign in again.');
+    }
   }
 
   logout() {
     this.currentUser = null;
-    localStorage.removeItem('pgp_session');
-    sessionStorage.removeItem('pgp_browser_alive');
+    safeStorageRemove('localStorage', 'pgp_session');
+    safeStorageRemove('sessionStorage', 'pgp_browser_alive');
   }
 
   // ── Theme / Sidebar / Session ─────────────────────────────
-  getTheme() { return localStorage.getItem('pgp_theme') || null; }
+  getTheme() { return safeStorageGet('localStorage', 'pgp_theme', null); }
   setTheme(theme) {
-    if (theme) localStorage.setItem('pgp_theme', theme);
-    else localStorage.removeItem('pgp_theme');
+    if (theme) safeStorageSet('localStorage', 'pgp_theme', theme);
+    else safeStorageRemove('localStorage', 'pgp_theme');
   }
 
-  getSidebarCollapsed() { return localStorage.getItem('pgp_sidebar') === 'collapsed'; }
-  setSidebarCollapsed(c) { localStorage.setItem('pgp_sidebar', c ? 'collapsed' : 'expanded'); }
+  getSidebarCollapsed() { return safeStorageGet('localStorage', 'pgp_sidebar', null) === 'collapsed'; }
+  setSidebarCollapsed(c) { safeStorageSet('localStorage', 'pgp_sidebar', c ? 'collapsed' : 'expanded'); }
 
   updateActivity() {
     if (!this.currentUser) return;
     this.currentUser.lastActivity = Date.now();
-    localStorage.setItem('pgp_session', JSON.stringify(this.currentUser));
+    safeStorageSet('localStorage', 'pgp_session', JSON.stringify(this.currentUser));
   }
 
   isSessionExpired() {

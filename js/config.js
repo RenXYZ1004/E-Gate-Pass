@@ -8,6 +8,15 @@
 export const SHEETS_API_URL =
   'https://script.google.com/macros/s/AKfycbzac8i25a5Z-kh21dfXG20xqFi0OQ0i4YEjTHjwvaToyvfYttrEFMuo0Zk6j2wsv_IbcA/exec';
 
+// Update the school year here once per academic year instead of maintaining
+// separate hard-coded labels and pass-number prefixes throughout the site.
+export const SCHOOL_YEAR_START = 2026;
+export const SCHOOL_YEAR_END = SCHOOL_YEAR_START + 1;
+export const SCHOOL_YEAR = `${SCHOOL_YEAR_START}-${SCHOOL_YEAR_END}`;
+export const SCHOOL_YEAR_LABEL = `SY ${SCHOOL_YEAR_START}–${SCHOOL_YEAR_END}`;
+export const COPYRIGHT_YEAR = new Date().getFullYear();
+export const SCHOOL_TIME_ZONE = 'Asia/Manila';
+
 // The one and only login page. Everything that needs a login sends the
 // user here — there is no second, in-app login form.
 //

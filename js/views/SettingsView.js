@@ -220,7 +220,7 @@ export default class SettingsView {
               </div>
               
 
-              <div style="font-size: 11px; color: var(--text3); border-top: 1px solid var(--border); padding-top: 12px;">&copy; 2026 Southville International School and Colleges</div>
+              <div style="font-size: 11px; color: var(--text3); border-top: 1px solid var(--border); padding-top: 12px;">&copy; ${new Date().getFullYear()} Southville International School and Colleges</div>
             </div>
           </div>
         </div>

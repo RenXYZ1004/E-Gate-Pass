@@ -158,9 +158,10 @@ export default class PGPView {
       if (p.status === 'active') badgeStyle = 'background: var(--green-s); color: var(--green);';
 
       const passName = String(p.name || p.studentName || p.studid || 'Unknown Student');
+      const passStatus = String(p.status || 'unknown');
 
       return `
-        <tr data-status="${escapeHTML(p.status)}">
+        <tr data-status="${escapeHTML(passStatus)}">
           <td style="text-align: center;">
             <input type="checkbox" class="pgp-row-cb" data-id="${p.id}">
           </td>
@@ -170,7 +171,7 @@ export default class PGPView {
           <td>
             <div style="display: flex; align-items: center; gap: 10px;">
               <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; overflow: hidden; color: var(--primary); font-weight: 700; font-size: 10px;">
-                ${hasPhoto(p.photo) ? `<img src="${escapeHTML(resolvePhotoUrl(p.photo))}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">` : escapeHTML(p.name.substring(0, 2).toUpperCase())}
+                ${hasPhoto(p.photo) ? `<img src="${escapeHTML(resolvePhotoUrl(p.photo))}" alt="${escapeHTML(passName)} profile photo" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">` : escapeHTML(passName.substring(0, 2).toUpperCase())}
               </div>
               <div>
                 <div style="font-weight: 600;">${escapeHTML(passName)}</div>
@@ -183,7 +184,7 @@ export default class PGPView {
             <div style="font-size: 11px; color: var(--text3);">${escapeHTML(p.section || '—')}</div>
           </td>
           <td>
-            <span class="badge" style="${badgeStyle}">${escapeHTML(p.status.toUpperCase())}</span>
+            <span class="badge" style="${badgeStyle}">${escapeHTML(passStatus.toUpperCase())}</span>
           </td>
           <td>
             <div class="flex gap-8">

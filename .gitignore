@@ -27,3 +27,6 @@ preview_mobile.html
 response.json
 response_new.json
 response*.json
+
+# Generated SEO-enabled static output, rebuilt for every deployment
+dist/

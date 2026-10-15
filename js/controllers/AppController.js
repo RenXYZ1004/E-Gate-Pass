@@ -11,8 +11,8 @@ import ReportsController from './pages/ReportsController.js';
 import faceBiometrics from '../services/FaceBiometrics.js';
 import Dialog from '../services/Dialog.js';
 import Icons from '../icons.js';
-import { generatePGP, generateQRToken } from '../utils.js';
-import { loginUrl } from '../config.js';
+import { generatePGP, generateQRToken, schoolDateKey } from '../utils.js';
+import { loginUrl, SCHOOL_TIME_ZONE } from '../config.js';
 
 // ── Camera scanning budget ───────────────────────────────────────
 // jsQR's cost scales with the pixel count it is handed, and the decode runs
@@ -378,6 +378,11 @@ export default class AppController {
       }
     }
 
+    // Stop page-scoped timers before replacing the current page.
+    if (this.view.currentPage === 'dashboard' && pageId !== 'dashboard') {
+      DashboardController.cleanup(this);
+    }
+
     // Stop camera if leaving scanner
     if (this.view.currentPage === 'scanner' && pageId !== 'scanner') {
       this.stopCamera();
@@ -542,6 +547,7 @@ export default class AppController {
 
   // ── Release timers, cameras and streams before leaving the page ──
   teardown() {
+    try { DashboardController.cleanup(this); } catch (_) { }
     try { this.stopIdleSyncLoop(); } catch (_) { }
     try { this.stopCamera(); } catch (_) { }
     try { this.stopFaceCamera(); } catch (_) { }
@@ -885,7 +891,7 @@ export default class AppController {
       student = this.model.getStudentByPassId(tgp.studentId) || this.model.getStudentByStudId(tgp.studentId);
       designatedGate = tgp.gate || 'Any authorized gate';
 
-      const todayStr = new Date().toLocaleDateString('en-CA');
+      const todayStr = schoolDateKey(new Date());
       // A pass row with a blank status used to throw here on .toUpperCase(),
       // which aborted the whole scan: no log written, no result shown, the
       // guard left with a frozen screen.
@@ -978,7 +984,7 @@ export default class AppController {
     const feedBox = document.getElementById('live-feed-container');
     if (feedBox) {
       import('../views/ScannerView.js').then(module => {
-        const todayLogs = (this.model.exitLogs || []).filter(l => l.timestamp && l.timestamp.startsWith(new Date().toLocaleDateString('en-CA')));
+        const todayLogs = (this.model.exitLogs || []).filter(l => l.timestamp && schoolDateKey(l.timestamp) === schoolDateKey(new Date()));
         feedBox.innerHTML = module.default.renderLiveFeed(todayLogs, this.model);
       });
     }
@@ -990,8 +996,8 @@ export default class AppController {
         to_email: student.parentEmail,
         student_name: student.name,
         gate_name: scannerGate,
-        exit_time: new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
-        exit_date: new Date().toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' })
+        exit_time: new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', timeZone: SCHOOL_TIME_ZONE }),
+        exit_date: new Date().toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric', timeZone: SCHOOL_TIME_ZONE })
       };
 
       this.sendParentEmail(templateParams)

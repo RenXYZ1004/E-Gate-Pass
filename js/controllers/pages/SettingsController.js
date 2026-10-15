@@ -1,6 +1,6 @@
 import Dialog from '../../services/Dialog.js';
 import SheetsService from '../../services/SheetsService.js';
-import { generatePGP, escapeHTML, generateQRToken } from '../../utils.js';
+import { generatePGP, escapeHTML, generateQRToken, schoolDateKey } from '../../utils.js';
 import SettingsView from '../../views/SettingsView.js';
 
 export default class SettingsController {
@@ -53,7 +53,7 @@ export default class SettingsController {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `PGP_Backup_${new Date().toLocaleDateString('en-CA')}.json`;
+        a.download = `PGP_Backup_${schoolDateKey(new Date())}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

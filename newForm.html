@@ -2,12 +2,13 @@
 <html lang="en">
 
 <head>
+<meta name="robots" content="noindex,follow">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="SISC e-Gatepass — Permanent Gatepass application form">
+  <meta name="description" content="Submit a permanent gate-pass application for Southville International School and Colleges. Use the official form to provide required student and guardian details.">
   <meta name="theme-color" content="#422467">
   <link rel="icon" type="image/png" href="logo.png">
-  <title>Apply for a Gatepass | SISC e-Gatepass</title>
+  <title>Apply for a Permanent Gate Pass | SISC e-Gatepass</title>
 </head>
 
 <body>
@@ -579,7 +580,7 @@
       <div class="fg">
         <label for="schoolyear">School Year <span class="req">*</span></label>
         <select id="schoolyear" required>
-          <option value="2026-2027">2026-2027</option>
+          <option value="2026-2027" data-current-school-year>2026-2027</option>
         </select>
       </div>
 
@@ -787,10 +788,19 @@
   </div>
 </div>
 
+<script type="module">
+  import { SCHOOL_YEAR } from './js/config.js';
+  const schoolYearSelect = document.getElementById('schoolyear');
+  if (schoolYearSelect) {
+    const option = schoolYearSelect.querySelector('[data-current-school-year]') || schoolYearSelect.options[0];
+    if (option) { option.value = SCHOOL_YEAR; option.textContent = SCHOOL_YEAR; }
+  }
+</script>
+
 <script>
   /* ------------------------------------------------------------------
      Sections per grade level — source: "sectioningForLandingPage" sheet
-     of the AY 26-27 responses workbook.
+     of the current school-year responses workbook.
      Edit these arrays each school year; nothing else needs to change.
   ------------------------------------------------------------------ */
   var SECTIONS = {

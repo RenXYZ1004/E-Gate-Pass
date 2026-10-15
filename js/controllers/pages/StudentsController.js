@@ -696,7 +696,7 @@ export default class StudentsController {
         }
         document.getElementById('edit-photo-file').value = '';
         document.getElementById('edit-photo-preview').innerHTML = hasPhoto(student.photo) 
-          ? `<img src="${escapeHTML(resolvePhotoUrl(student.photo))}" style="width:100%;height:100%;object-fit:cover;">`
+          ? `<img src="${escapeHTML(resolvePhotoUrl(student.photo))}" alt="${escapeHTML(student.name || student.studid || 'Student')} photo preview" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">`
           : Icons['camera'](20);
 
         // Snapshot state for unsaved changes detection

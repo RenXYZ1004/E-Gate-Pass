@@ -25,6 +25,8 @@ EMAIL_SMTP_AUDIT.md
 CHANGELOG.md
 README.md
 README-PHOTO-FIX.txt
+STABILITY_AUDIT.md
+scripts/
 Vercel-Environment-Variables.txt
 
 # ── Development scratch files ───────────────────────────────────
@@ -35,3 +37,9 @@ SISC LOGO.png
 # NOT excluded, despite looking like scratch files: PGP_Card_*.png are the
 # two "Sample Gatepass" images on the landing page (index.html). Both show
 # demo data (Rizal, Jose P. / PGP-DEMO999), not a real student.
+
+# Google Apps Script project manifest; keep in source archive, not public deployment
+appsscript.json
+
+# Generated SEO-enabled static output, rebuilt for every deployment
+dist/

@@ -11,7 +11,7 @@
 //     no longer abort the whole install (cache.addAll is all-or-nothing).
 // ════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'pgp-cache-v1.4.11';
+const CACHE_NAME = 'pgp-cache-v1.4.13';
 
 // Files that make up the app shell — always revalidated against the network.
 //
@@ -30,6 +30,8 @@ const APP_SHELL = [
   './css/landing.css',
   './js/main.js',
   './js/landing.js',
+  './js/contact.js',
+  './js/analytics-consent.js',
   './js/config.js',
   './js/utils.js',
   './js/icons.js',
@@ -68,7 +70,12 @@ const APP_SHELL = [
 const STATIC_ASSETS = [
   './js/lib/jsQR.min.js',
   './logo.png',
+  './logo.webp',
   './SISC_logo.png',
+  './SISC_logo.webp',
+  './PGP_Card_1784540906451.webp',
+  './PGP_Card_1784609066593.webp',
+  './og-image.jpg',
   './manifest.json'
 ];
 

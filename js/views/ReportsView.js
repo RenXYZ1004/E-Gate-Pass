@@ -1,4 +1,5 @@
 import Icons from '../icons.js';
+import { schoolDateKey, schoolTimeKey } from '../utils.js';
 
 export default class ReportsView {
   static render(model) {
@@ -7,8 +8,8 @@ export default class ReportsView {
     const logs = model.exitLogs || [];
 
     // Today's Date String
-    const todayStr = new Date().toLocaleDateString('en-CA');
-    const todayLogs = logs.filter(l => l.timestamp && l.timestamp.startsWith(todayStr));
+    const todayStr = schoolDateKey(new Date());
+    const todayLogs = logs.filter(l => l.timestamp && schoolDateKey(l.timestamp) === todayStr);
 
     // ── 1. Pass Status Summary ──
     const active = passes.filter(p => p.status === 'active').length;
@@ -42,7 +43,7 @@ export default class ReportsView {
     let maxHourCount = 0;
     todayLogs.forEach(l => {
       const date = new Date(l.timestamp);
-      const hour = date.getHours();
+      const hour = Number(schoolTimeKey(date).slice(0, 2));
       if (hour >= 7 && hour <= 18) {
         const idx = hour - 7;
         hourlyData[idx]++;

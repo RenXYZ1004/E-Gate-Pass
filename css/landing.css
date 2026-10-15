@@ -362,3 +362,36 @@ footer {
   .reveal { opacity: 1; transform: none; transition: none; }
   .btn:hover { transform: none; }
 }
+
+
+/* ── PUBLIC CONTACT FORM ─────────────────────────────────────── */
+.contact-section { padding: 88px 0; background: linear-gradient(180deg, rgba(54,33,80,.18), rgba(9,7,16,.38)); border-top: 1px solid var(--line); }
+.contact-layout { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: clamp(28px, 6vw, 76px); align-items: start; }
+.contact-copy h2 { font-size: clamp(30px, 4vw, 46px); line-height: 1.08; margin: 10px 0 18px; letter-spacing: -.03em; }
+.contact-copy p:not(.eyebrow) { color: var(--muted); max-width: 54ch; line-height: 1.75; }
+.contact-links, .footer-links { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 22px; }
+.contact-links a, .footer-links a, .footer-link-button { color: var(--teal); text-decoration: none; font-size: 12px; font-weight: 650; }
+.contact-links a:hover, .footer-links a:hover, .footer-link-button:hover { text-decoration: underline; }
+.contact-form { min-width: 0; padding: clamp(20px, 3vw, 30px); border: 1px solid var(--line); border-radius: 20px; background: rgba(20,14,31,.88); box-shadow: 0 20px 60px rgba(0,0,0,.16); }
+.contact-field-row { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+.contact-field { display: grid; gap: 7px; margin-bottom: 16px; }
+.contact-field label { font-size: 12px; font-weight: 700; color: var(--paper); }
+.contact-field input, .contact-field select, .contact-field textarea { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.045); color: var(--text); font: inherit; font-size: 14px; padding: 12px 13px; outline: none; }
+.contact-field select option { color: #21182d; }
+.contact-field textarea { resize: vertical; min-height: 130px; line-height: 1.6; }
+.contact-field input:focus, .contact-field select:focus, .contact-field textarea:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(0,201,177,.12); }
+.contact-form button[disabled] { opacity: .68; cursor: wait; }
+.contact-status { min-height: 20px; margin: 12px 0 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
+.contact-status.is-success { color: #52dbbd; } .contact-status.is-error { color: #ff9999; } .contact-status.is-pending { color: var(--teal); }
+.contact-honeypot { position: absolute!important; left: -10000px!important; width: 1px!important; height: 1px!important; overflow: hidden!important; }
+.footer-links { margin: 0; align-items: center; }
+.footer-link-button { border: 0; background: none; font-family: inherit; cursor: pointer; padding: 0; }
+.privacy-consent-banner { position: fixed; z-index: 10000; left: 20px; right: 20px; bottom: 20px; max-width: 1060px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 20px 22px; border: 1px solid #665080; border-radius: 16px; background: #1d142b; box-shadow: 0 18px 60px rgba(0,0,0,.45); color: #fff; }
+.privacy-consent-banner strong { display: block; font-size: 14px; margin-bottom: 5px; }
+.privacy-consent-banner p { font-size: 12px; line-height: 1.6; color: #d0c7dc; margin: 0; max-width: 620px; }
+.privacy-consent-actions { display: flex; gap: 10px; flex-shrink: 0; }
+.privacy-consent-actions button { border-radius: 9px; padding: 11px 13px; font: inherit; font-size: 12px; font-weight: 750; cursor: pointer; }
+.privacy-consent-actions .consent-secondary { color: #fff; border: 1px solid #74628b; background: transparent; }
+.privacy-consent-actions .consent-primary { color: #171121; border: 1px solid var(--teal); background: var(--teal); }
+@media(max-width:760px) { .contact-layout { grid-template-columns: 1fr; } .privacy-consent-banner { left: 10px; right: 10px; bottom: 10px; align-items: stretch; flex-direction: column; gap: 14px; padding: 16px; } .privacy-consent-actions { width: 100%; } .privacy-consent-actions button { flex: 1; } }
+@media(max-width:480px) { .contact-field-row { grid-template-columns: 1fr; gap: 0; } .contact-form { padding: 18px; } }

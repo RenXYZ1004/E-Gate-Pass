@@ -1,5 +1,5 @@
 import Dialog from '../../services/Dialog.js';
-import { debounce, generatePaginationHTML, bindPaginationEvents } from '../../utils.js';
+import { debounce, generatePaginationHTML, bindPaginationEvents, schoolDateKey, schoolTimeKey } from '../../utils.js';
 
 export default class LogsController {
   static bind(controller) {
@@ -42,8 +42,8 @@ export default class LogsController {
           const sName = student ? student.name : 'Unknown';
           const sId = student ? (student.studid || student.id) : log.studentId;
           const date = new Date(log.timestamp);
-          const dateStr = date.toLocaleDateString('en-CA');
-          const timeStr = date.toLocaleTimeString('en-GB');
+          const dateStr = schoolDateKey(date);
+          const timeStr = schoolTimeKey(date);
           
           csv += `${escapeCSV(dateStr)},${escapeCSV(timeStr)},${escapeCSV(sName)},${escapeCSV(sId)},${escapeCSV(log.gate || 'Gate 1')},${escapeCSV(log.result)},${escapeCSV(log.passType || 'PGP')}\n`;
         });
@@ -52,7 +52,7 @@ export default class LogsController {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `PGP_ExitLogs_${new Date().toLocaleDateString('en-CA')}.csv`;
+        a.download = `PGP_ExitLogs_${schoolDateKey(new Date())}.csv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -100,7 +100,7 @@ export default class LogsController {
       const logGate = log.gate || 'Gate 1';
       
       const date = new Date(log.timestamp);
-      const logTime = String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0');
+      const logTime = schoolTimeKey(date);
       
       const p = controller.pagination;
       

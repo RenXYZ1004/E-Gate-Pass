@@ -1,9 +1,11 @@
 import Icons from '../icons.js';
-import { escapeHTML, resolvePhotoUrl, hasPhoto } from '../utils.js';
+import { escapeHTML, resolvePhotoUrl, hasPhoto, schoolDateKey } from '../utils.js';
+import { SCHOOL_TIME_ZONE } from '../config.js';
 
 export default class ScannerView {
   static render(model) {
-    const todayLogs = (model.exitLogs || []).filter(l => l.timestamp && l.timestamp.startsWith(new Date().toLocaleDateString('en-CA')));
+    const today = schoolDateKey(new Date());
+    const todayLogs = (model.exitLogs || []).filter(l => l.timestamp && schoolDateKey(l.timestamp) === today);
     const userGate = model.currentUser?.gate || 'Gate 1';
     
     const scansCount = todayLogs.length;
@@ -231,7 +233,7 @@ export default class ScannerView {
       const student = model.getStudentByPassId(log.studentId) || model.getStudentByStudId(log.studentId);
       const sName = student ? escapeHTML(student.name) : 'Unknown';
       const isDenied = log.result === 'denied';
-      const timeStr = new Date(log.timestamp).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+      const timeStr = new Date(log.timestamp).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', timeZone: SCHOOL_TIME_ZONE });
 
       return `
         <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; background: ${isDenied ? 'var(--red-s)' : 'transparent'};">

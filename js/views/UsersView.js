@@ -58,14 +58,14 @@ export default class UsersView {
                   <td>
                     <div style="display: flex; align-items: center; gap: 10px;">
                       <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; overflow: hidden; color: var(--primary); font-weight: 700; font-size: 10px;">
-                        ${escapeHTML((u.name || u.username || 'U').substring(0, 2).toUpperCase())}
+                        ${escapeHTML(String(u.name || u.username || 'U').substring(0, 2).toUpperCase())}
                       </div>
                       <div style="font-weight: 600;">${escapeHTML(u.name || 'Unknown')}</div>
                     </div>
                   </td>
                   <td>${escapeHTML(u.username)}</td>
                   <td>
-                    <span class="badge ${u.role === 'admin' ? 'b-info' : (u.role === 'guard' ? 'b-active' : 'b-pending')}">${(u.role || '').toUpperCase()}</span>
+                    <span class="badge ${u.role === 'admin' ? 'b-info' : (u.role === 'guard' ? 'b-active' : 'b-pending')}">${String(u.role || '').toUpperCase()}</span>
                   </td>
                   <td>${escapeHTML(u.gate || 'Main Office')}</td>
                   <td>

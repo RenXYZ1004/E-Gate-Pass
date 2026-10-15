@@ -1,5 +1,6 @@
 import Icons from '../icons.js';
-import { escapeHTML, resolvePhotoUrl, hasPhoto } from '../utils.js';
+import { escapeHTML, resolvePhotoUrl, hasPhoto, schoolDateKey, schoolTimeKey } from '../utils.js';
+import { SCHOOL_YEAR_LABEL, SCHOOL_TIME_ZONE } from '../config.js';
 
 export default class DashboardView {
   static render(model) {
@@ -10,16 +11,17 @@ export default class DashboardView {
 
     // ── Date & time calculations ──────────────────────────
     const now = new Date();
-    const today = now.toLocaleDateString('en-CA');
-    const todayLogs = logs.filter(l => l.timestamp && l.timestamp.startsWith(today));
+    const today = schoolDateKey(now);
+    const todayLogs = logs.filter(l => l.timestamp && schoolDateKey(l.timestamp) === today);
     const todayGranted = todayLogs.filter(l => l.result !== 'denied').length;
     const todayDenied = todayLogs.filter(l => l.result === 'denied').length;
 
     // Yesterday comparison for trend indicator
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toLocaleDateString('en-CA');
-    const yesterdayExits = logs.filter(l => l.timestamp && l.timestamp.startsWith(yesterdayStr)).length;
+    // Anchor at noon in Manila before subtracting a day to avoid local-timezone drift.
+    const yesterday = new Date(`${today}T12:00:00+08:00`);
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+    const yesterdayStr = schoolDateKey(yesterday);
+    const yesterdayExits = logs.filter(l => l.timestamp && schoolDateKey(l.timestamp) === yesterdayStr).length;
     const exitDiff = todayLogs.length - yesterdayExits;
 
     // General stats
@@ -27,10 +29,11 @@ export default class DashboardView {
     const activePGP = students.filter(s => s.status === 'active').length;
 
     // Greeting based on time of day
-    const hour = now.getHours();
+    const hour = Number(schoolTimeKey(now).slice(0, 2));
     const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
     const userName = user ? user.name : 'User';
-    const userRole = user ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : '';
+    const roleText = String(user && user.role || '');
+    const userRole = roleText ? roleText.charAt(0).toUpperCase() + roleText.slice(1) : '';
 
     // Trend arrow
     const trendIcon = exitDiff > 0 ? '▲' : exitDiff < 0 ? '▼' : '—';
@@ -58,8 +61,8 @@ export default class DashboardView {
           <div class="dash-greeting-text">${greeting}, <strong>${escapeHTML(userName)}</strong></div>
           <div class="dash-greeting-meta">
             <span class="badge b-info" style="font-size:10px;padding:1px 8px;">${escapeHTML(userRole)}</span>
-            <span class="dash-greeting-date" id="dash-live-date">${now.toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
-            <span class="dash-greeting-time" id="dash-live-time">${now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+            <span class="dash-greeting-date" id="dash-live-date">${now.toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: SCHOOL_TIME_ZONE })}</span>
+            <span class="dash-greeting-time" id="dash-live-time">${now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: SCHOOL_TIME_ZONE })}</span>
           </div>
         </div>
         <div class="dash-greeting-right">${Icons['layout-grid'](28)}</div>
@@ -71,7 +74,7 @@ export default class DashboardView {
           <div class="stat-icon">${Icons['shield-check'](20)}</div>
           <div class="stat-val" style="color:var(--accent-d);">${activePGP}</div>
           <div class="stat-lbl">Active PGP Passes</div>
-          <div class="stat-sub">Valid for SY 2026–2027</div>
+          <div class="stat-sub">Valid for ${SCHOOL_YEAR_LABEL}</div>
         </a>
         <a class="stat dash-stat-link" data-nav="students">
           <div class="stat-icon">${Icons['users'](20)}</div>
@@ -246,7 +249,7 @@ export default class DashboardView {
       const sName = student ? escapeHTML(student.name) : 'Unknown Student';
       const sGrade = student ? escapeHTML(student.fullSection || student.grade) : 'Unknown Grade';
       const isDenied = log.result === 'denied';
-      const timeStr = new Date(log.timestamp).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+      const timeStr = new Date(log.timestamp).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', timeZone: SCHOOL_TIME_ZONE });
       const initials = sName !== 'Unknown Student' ? sName.substring(0, 2).toUpperCase() : '??';
 
       return `

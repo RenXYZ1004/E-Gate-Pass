@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# sitemap URL is inserted by build-seo.cjs
+Sitemap: __SEO_SITE_URL__/sitemap.xml

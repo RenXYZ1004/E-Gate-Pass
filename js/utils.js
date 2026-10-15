@@ -1,4 +1,44 @@
+import { SCHOOL_YEAR_START, SCHOOL_YEAR_END, SCHOOL_TIME_ZONE } from './config.js';
+
 const _externalScriptPromises = new Map();
+
+
+/** Return a calendar date as YYYY-MM-DD in the school's timezone (Asia/Manila).
+ * Date-only strings are preserved as-is to avoid UTC parsing shifting the day.
+ */
+export function schoolDateKey(value = new Date()) {
+  if (typeof value === 'string') {
+    const dateOnly = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dateOnly) return `${dateOnly[1]}-${dateOnly[2]}-${dateOnly[3]}`;
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: SCHOOL_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit'
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+/** Format a date-only value in the school's timezone without UTC day drift. */
+export function schoolDateLabel(value, options = {}) {
+  const raw = typeof value === 'string' ? value.trim() : '';
+  const dateOnly = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const date = dateOnly
+    ? new Date(`${dateOnly[1]}-${dateOnly[2]}-${dateOnly[3]}T12:00:00+08:00`)
+    : value instanceof Date ? value : new Date(value);
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return raw;
+  return new Intl.DateTimeFormat('en-PH', { ...options, timeZone: SCHOOL_TIME_ZONE }).format(date);
+}
+
+/** Return a timestamp's time as HH:mm in the school's timezone. */
+export function schoolTimeKey(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: SCHOOL_TIME_ZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+  }).format(date);
+}
 
 export const EXTERNAL_SCRIPTS = Object.freeze({
   // Primary QR path matches the original working application. The loader
@@ -423,7 +463,7 @@ export function renderVirtualIdCard(student, options = {}) {
   } = options;
 
   const s = student || {};
-  const name = s.name || 'Unknown';
+  const name = String(s.name || 'Unknown');
   const gradeLine = [s.grade, s.section].filter(Boolean).join(' - ');
   const arrangementText = s.arrangements || 'No arrangement specified';
   const nameFit = fitName(name);
@@ -462,7 +502,7 @@ export function renderVirtualIdCard(student, options = {}) {
 
       <div style="background:linear-gradient(135deg,#422467 0%,#291244 100%);padding:17px 16px 22px;color:#fff;display:flex;align-items:center;gap:11px;position:relative;flex-shrink:0;">
         <div style="width:40px;height:40px;background:#ffffff;border-radius:10px;padding:4px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 8px rgba(0,0,0,0.2);flex-shrink:0;box-sizing:border-box;">
-          <img src="SISC_logo.png" alt="SISC" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
+          <img src="SISC_logo.webp" alt="Southville International School and Colleges logo" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">
         </div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:13px;font-weight:900;letter-spacing:0.2px;line-height:1.1;text-transform:uppercase;">Southville International School and Colleges</div>
@@ -500,7 +540,7 @@ export function renderVirtualIdCard(student, options = {}) {
         </div>
       </div>
 
-      <div style="background:#481F59;padding:9px 10px;text-align:center;color:#F5F5F5;font-size:9px;font-weight:800;letter-spacing:0.6px;line-height:1.2;flex-shrink:0;">A.Y. 2026-2027 &bull; VALID UNTIL JULY 2027</div>
+      <div style="background:#481F59;padding:9px 10px;text-align:center;color:#F5F5F5;font-size:9px;font-weight:800;letter-spacing:0.6px;line-height:1.2;flex-shrink:0;">A.Y. ${SCHOOL_YEAR_START}-${SCHOOL_YEAR_END} &bull; VALID UNTIL JULY ${SCHOOL_YEAR_END}</div>
     </div>`;
 }
 
@@ -673,9 +713,9 @@ export function waitForImages(root, timeout = 5000) {
 
 /**
  * Current school year prefix (first 2 digits of the starting year).
- * For SY 2026-2027, this is '26'.
+ * The prefix is derived from SCHOOL_YEAR_START in js/config.js.
  */
-export const CURRENT_SCHOOL_YEAR = '26';
+export const CURRENT_SCHOOL_YEAR = String(SCHOOL_YEAR_START).slice(-2);
 
 /**
  * Extract a 2-character grade code from a grade string.

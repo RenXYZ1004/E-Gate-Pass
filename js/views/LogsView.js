@@ -1,13 +1,14 @@
 import Icons from '../icons.js';
-import { escapeHTML } from '../utils.js';
+import { escapeHTML, schoolDateKey, schoolTimeKey } from '../utils.js';
+import { SCHOOL_TIME_ZONE } from '../config.js';
 
 export default class LogsView {
   static render(model) {
     const logs = model.exitLogs || [];
     const userGate = model.currentUser?.gate || 'all';
     
-    const todayStr = new Date().toLocaleDateString('en-CA');
-    const todayLogs = logs.filter(l => l.timestamp && l.timestamp.startsWith(todayStr));
+    const todayStr = schoolDateKey(new Date());
+    const todayLogs = logs.filter(l => l.timestamp && schoolDateKey(l.timestamp) === todayStr);
     const grantedLogs = logs.filter(l => l.result === 'granted');
     const grantRate = logs.length > 0 ? ((grantedLogs.length / logs.length) * 100).toFixed(1) + '%' : '0%';
     
@@ -132,9 +133,9 @@ export default class LogsView {
       const sGrade = student ? escapeHTML(student.grade) : '';
       
       const date = new Date(log.timestamp);
-      const dateStr = date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
-      const timeStr = date.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
-      const timeVal = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+      const dateStr = date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', timeZone: SCHOOL_TIME_ZONE });
+      const timeStr = date.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', timeZone: SCHOOL_TIME_ZONE });
+      const timeVal = schoolTimeKey(date);
       
       const isDenied = log.result === 'denied';
       const rowGate = escapeHTML(log.gate || 'Gate 1');

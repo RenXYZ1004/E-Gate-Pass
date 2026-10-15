@@ -52,5 +52,7 @@
         }
       ]
     }
-  ]
+  ],
+  "buildCommand": "node build-seo.cjs",
+  "outputDirectory": "dist"
 }
