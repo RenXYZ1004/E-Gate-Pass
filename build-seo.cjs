@@ -29,7 +29,7 @@ fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
 const staticFiles = [
   'index.html','app.html','newForm.html','tgpForm.html','privacy-policy.html','terms-of-service.html','404.html',
-  'manifest.json','sw.js','logo.png','logo.webp','SISC_logo.png','SISC_logo.webp',
+  'manifest.json','sw.js','logo.png','logo.webp','SISC_logo.png','SISC_logo.webp','Southville.webp',
   'PGP_Card_1784540906451.png','PGP_Card_1784540906451.webp','PGP_Card_1784609066593.png','PGP_Card_1784609066593.webp','og-image.jpg'
 ];
 function copyEntry(relative) {

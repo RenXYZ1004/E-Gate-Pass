@@ -21,3 +21,11 @@ Updated the public `index.html` homepage, its standalone stylesheet `css/landing
 
 ## Not verified live
 No production login, live email delivery, Google Sheets access, production-domain preview, or end-to-end school workflow was performed. Review the deployed preview at desktop and mobile widths before promoting it to production.
+
+## Supplied campus background update
+
+- Added `Southville.webp`, an optimized WebP conversion of the supplied Southville campus photograph (1920 px maximum width).
+- Applied it to the homepage hero with layered dark-green overlays for dependable text contrast and a softly tinted SISC-purple heading accent.
+- Used `background-size: cover` and tuned background positions for desktop, tablet, and narrow mobile screens so the image fills the area without stretching.
+- Preloaded the hero image for faster first paint; added it to the static SEO build output and service-worker asset cache.
+- Bumped the service-worker cache to `pgp-cache-v1.4.14` so returning visitors can receive the updated hero.

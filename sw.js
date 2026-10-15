@@ -11,7 +11,7 @@
 //     no longer abort the whole install (cache.addAll is all-or-nothing).
 // ════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'pgp-cache-v1.4.13';
+const CACHE_NAME = 'pgp-cache-v1.4.14';
 
 // Files that make up the app shell — always revalidated against the network.
 //
@@ -73,6 +73,7 @@ const STATIC_ASSETS = [
   './logo.webp',
   './SISC_logo.png',
   './SISC_logo.webp',
+  './Southville.webp',
   './PGP_Card_1784540906451.webp',
   './PGP_Card_1784609066593.webp',
   './og-image.jpg',

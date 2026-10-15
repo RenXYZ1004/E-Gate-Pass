@@ -72,7 +72,34 @@ section.tight { padding-top: 0; padding-bottom: 76px; }
 .sec-head p { margin-top: 13px; color: var(--muted); line-height: 1.75; }
 
 /* Hero */
-.hero { min-height: 0; padding: clamp(64px, 8vw, 104px) 0 70px; background: linear-gradient(180deg, #fff 0%, #fcfaff 100%); border-bottom: 1px solid var(--line); }
+.hero {
+  position: relative;
+  isolation: isolate;
+  min-height: clamp(560px, 68vh, 780px);
+  min-height: clamp(560px, 68svh, 780px);
+  padding: clamp(64px, 8vw, 104px) 0 70px;
+  background-color: #17281d;
+  background-image:
+    linear-gradient(90deg, rgba(13, 27, 18, .86) 0%, rgba(16, 31, 20, .80) 42%, rgba(16, 31, 20, .66) 100%),
+    linear-gradient(0deg, rgba(10, 24, 16, .28), rgba(10, 24, 16, .08)),
+    url("../Southville.webp");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center 54%;
+  border-bottom: 1px solid rgba(255, 255, 255, .16);
+}
+.hero .eyebrow { color: rgba(255, 255, 255, .92); }
+.hero .eyebrow-dot { background: #d2e8a6; box-shadow: 0 0 0 4px rgba(210, 232, 166, .14); }
+.hero-school-year { color: rgba(255, 255, 255, .78); }
+.hero h1 { color: #fff; text-shadow: 0 2px 22px rgba(0, 0, 0, .14); }
+.hero h1 span { color: #e0d0f2; }
+.hero-sub { color: rgba(255, 255, 255, .86); }
+.hero-note { color: rgba(255, 255, 255, .78); }
+.hero-note svg { color: #d2e8a6; }
+.hero .btn-solid { background: #fff; color: var(--purple); border-color: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, .13); }
+.hero .btn-solid:hover { background: #f3edf8; border-color: #f3edf8; }
+.hero .btn-line { color: #fff; background: rgba(255, 255, 255, .09); border-color: rgba(255, 255, 255, .64); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.hero .btn-line:hover { color: #fff; background: rgba(255, 255, 255, .17); border-color: #fff; }
 .hero-grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(350px, .82fr); gap: clamp(38px, 6.5vw, 84px); align-items: center; }
 .hero-copy { padding: 8px 0 15px; }
 .hero-school-year { margin-top: 18px; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .01em; }
@@ -202,6 +229,7 @@ footer > .footer-brand { display: flex; align-items: center; gap: 9px; color: va
   .cta-actions { flex-direction: row; flex-wrap: wrap; min-width: 0; }
 }
 @media (max-width: 760px) {
+  .hero { background-position: 52% 49%; }
   .nav { min-height: 70px; padding: 12px 20px; gap: 12px; }
   .brand-seal { width: 39px; height: 39px; flex-basis: 39px; }
   .brand-sy { font-size: 10px; }
@@ -230,6 +258,7 @@ footer > .footer-brand { display: flex; align-items: center; gap: 9px; color: va
   .privacy-consent-actions button { flex: 1; }
 }
 @media (max-width: 520px) {
+  .hero { background-position: 51% center; padding-top: 48px; padding-bottom: 46px; }
   .nav { align-items: center; padding-inline: 14px; }
   .brand { gap: 7px; }
   .brand-seal { width: 34px; height: 34px; flex-basis: 34px; padding: 3px; }
